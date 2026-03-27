@@ -18,6 +18,13 @@ import Payments from './pages/portal/Payments'
 import RegistrationLink from './pages/portal/RegistrationLink'
 import PortalSettings from './pages/portal/PortalSettings'
 
+// Admin Dashboard
+import AdminLayout from './components/admin/AdminLayout'
+import PipelineKYB from './pages/admin/PipelineKYB'
+import EmpresasActivas from './pages/admin/EmpresasActivas'
+import Metricas from './pages/admin/Metricas'
+import Configuracion from './pages/admin/Configuracion'
+
 // Auth context
 export const AuthContext = createContext(null)
 export function useAuth() {
@@ -196,6 +203,15 @@ export default function App() {
             <Route path="historial" element={<Payments />} />
             <Route path="link" element={<RegistrationLink />} />
             <Route path="ajustes" element={<PortalSettings />} />
+          </Route>
+
+          {/* Admin Dashboard */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<PipelineKYB />} />
+            <Route path="pipeline" element={<PipelineKYB />} />
+            <Route path="empresas" element={<EmpresasActivas />} />
+            <Route path="metricas" element={<Metricas />} />
+            <Route path="config" element={<Configuracion />} />
           </Route>
 
           {/* Catch-all */}
