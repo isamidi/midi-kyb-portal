@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+→import React, { useState, useEffect, useContext } from 'react';
 import { AdminContext } from '../../components/admin/AdminLayout';
 import { supabase } from '../../lib/supabaseClient';
 
@@ -14,7 +14,7 @@ const PipelineKYB = () => {
   const [showDetailPanel, setShowDetailPanel] = useState(false);
   const [showNewCompanyModal, setShowNewCompanyModal] = useState(false);
   const [stageDropdownCompanyId, setStageDropdownCompanyId] = useState(null);
-  const [solicitutdes, setSolicitutdes] = useState({});
+  const [solicitudes, setSolicitudes] = useState({});
   const [personas, setPersonas] = useState({});
   const [stageHistory, setStageHistory] = useState({});
   const [activityLog, setActivityLog] = useState({});
@@ -87,8 +87,8 @@ const PipelineKYB = () => {
     }
 
     // Apply filter chips
-    if (filterChip === 'Con solicitutdes') {
-      result = result.filter((c) => (solicitutdes[c.id]?.count || 0) > 0);
+    if (filterChip === 'Con solicitudes') {
+      result = result.filter((c) => (solicitudes[c.id]?.count || 0) > 0);
     } else if (filterChip === 'Alertas') {
       result = result.filter((c) => {
         const daysInStage = c.stage_entered_at ? getDaysDifference(c.stage_entered_at) : 0;
@@ -99,7 +99,7 @@ const PipelineKYB = () => {
     }
 
     setFilteredCompanies(result);
-  }, [companies, searchTerm, activeStageFilter, filterChip, solicitutdes, adminUser]);
+  }, [companies, searchTerm, activeStageFilter, filterChip, solicitudes, adminUser]);
 
   const fetchCompanies = async () => {
     try {
@@ -112,7 +112,7 @@ const PipelineKYB = () => {
       if (error) throw error;
 
       setCompanies(data || []);
-      fetchSolicitutdesAndPersonas(data || []);
+      fetchSolicitudesAndPersonas(data || []);
       fetchStageHistory(data || []);
       fetchActivityLog(data || []);
     } catch (err) {
@@ -136,11 +136,11 @@ const PipelineKYB = () => {
     }
   };
 
-  const fetchSolicitutdesAndPersonas = async (companiesList) => {
+  const fetchSolicitudesAndPersonas = async (companiesList) => {
     try {
-      // Fetch solicitutdes
+      // Fetch solicitudes
       const { data: solData, error: solError } = await supabase
-        .from('solicitutdes')
+        .from('solicitudes')
         .select('company_id, id')
         .is('resolved_at', null);
 
@@ -149,7 +149,7 @@ const PipelineKYB = () => {
         companiesList.forEach((c) => {
           solMap[c.id] = { count: solData.filter((s) => s.company_id === c.id).length };
         });
-        setSolicitutdes(solMap);
+        setSolicitudes(solMap);
       }
 
       // Fetch personas
@@ -169,7 +169,7 @@ const PipelineKYB = () => {
         setPersonas(perMap);
       }
     } catch (err) {
-      console.error('Error fetching solicitutdes/personas:', err);
+      console.error('Error fetching solicitudes/personas:', err);
     }
   };
 
@@ -342,7 +342,7 @@ const PipelineKYB = () => {
 
       {/* Filter chips */}
       <div style={styles.filterChips}>
-        {['Con solicitutdes', 'Alertas', 'Mis empresas'].map((chip) => (
+        {['Con solicitudes', 'Alertas', 'Mis empresas'].map((chip) => (
           <button
             key={chip}
             onClick={() => setFilterChip(filterChip === chip ? 'Todas' : chip)}
@@ -385,7 +385,7 @@ const PipelineKYB = () => {
               <p style={styles.companyEmail}>{company.contact_email}</p>
               <div style={styles.companyMeta}>
                 <span>
-                  Solicitutdes: {solicitutdes[company.id]?.count || 0}
+                  Solicitudes: {solicitudes[company.id]?.count || 0}
                 </span>
                 <span>
                   Personas: {personas[company.id]?.activated || 0}/
@@ -447,13 +447,13 @@ const PipelineKYB = () => {
               </p>
             </div>
 
-            {/* Solicitutdes section */}
+            {/* Solicitudes section */}
             <div style={styles.detailSection}>
-              <h3>Solicitutdes ({solicitutdes[selectedCompany.id]?.count || 0})</h3>
-              {solicitutdes[selectedCompany.id]?.count > 0 ? (
-                <p>Hay {solicitutdes[selectedCompany.id]?.count} solicitutdes pendientes</p>
+              <h3>Solicitudes ({solicitudes[selectedCompany.id]?.count || 0})</h3>
+              {solicitudes[selectedCompany.id]?.count > 0 ? (
+                <p>Hay {solicitudes[selectedCompany.id]?.count} solicitudes pendientes</p>
               ) : (
-                <p>No hay solicitutdes</p>
+                <p>No hay solicitudes</p>
               )}
             </div>
 
