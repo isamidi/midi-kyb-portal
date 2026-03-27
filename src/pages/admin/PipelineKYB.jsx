@@ -124,11 +124,11 @@ const PipelineKYB = () => {
 
   const fetchAdminUsers = async () => {
     try {
-      const { data, error } = await supabase.from('admin_users').select('id, name');
+      const { data, error } = await supabase.from('admin_users').select('id, full_name');
       if (error) throw error;
       const usersMap = {};
       data?.forEach((user) => {
-        usersMap[user.id] = user.name;
+        usersMap[user.id] = user.full_name;
       });
       setAdminUsers(usersMap);
     } catch (err) {
