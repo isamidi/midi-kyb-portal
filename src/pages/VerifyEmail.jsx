@@ -7,6 +7,9 @@ export default function VerifyEmail() {
   const navigate = useNavigate()
   const location = useLocation()
   const email = location.state?.email || ''
+  const companyName = location.state?.company_name || ''
+  const mode = location.state?.mode || 'register'
+
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -32,14 +35,10 @@ export default function VerifyEmail() {
   }, [countdown])
 
   const handleChange = (index, value) => {
-    // Only allow digits
     if (value && !/^\d$/.test(value)) return
-
     const newOtp = [...otp]
     newOtp[index] = value
     setOtp(newOtp)
-
-    // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus()
     }
@@ -75,22 +74,56 @@ export default function VerifyEmail() {
     setError(null)
 
     try {
-      const { error: verifyErr } = await supabase.auth.verifyOtp({
+      const { data: verifyData, error: verifyErr } = await supabase.auth.verifyOtp({
         email,
         token,
-        type: 'signup',
+        type: 'email',
       })
-
       if (verifyErr) throw verifyErr
 
-      // Email verified, redirect to KYB flow
-      navigate('/kyb/upload')
+      const userId = verifyData.user?.id
+
+      // If coming from registration, create company records
+      if (mode === 'register' && companyName && userId) {
+        // Check if company already exists for this user
+        const { data: existingLink } = await supabase
+          .from('company_users')
+          .select('id')
+          .eq('user_id', userId)
+          .single()
+
+        if (!existingLink) {
+          const { data: company, error: compErr } = await supabase
+            .from('companies')
+            .insert({ name: companyName })
+            .select()
+            .single()
+          if (compErr) throw compErr
+
+          await supabase.from('company_users').insert({
+            company_id: company.id,
+            user_id: userId,
+            role: 'admin'
+          })
+
+          await supabase.from('kyb_applications').insert({
+            company_id: company.id,
+            status: 'draft',
+            step: 1
+          })
+        }
+
+        navigate('/kyb/upload')
+      } else {
+        // Login flow - redirect based on status
+        navigate('/kyb/upload')
+      }
     } catch (err) {
-      setError(err.message === 'Token has expired or is invalid'
-        ? 'Codigo invalido o expirado. Intenta de nuevo.'
-        : err.message
+      setError(
+        err.message === 'Token has expired or is invalid'
+          ? 'Codigo invalido o expirado. Intenta de nuevo.'
+          : err.message
       )
-      // Clear OTP on error
       setOtp(['', '', '', '', '', ''])
       inputRefs.current[0]?.focus()
     } finally {
@@ -105,12 +138,14 @@ export default function VerifyEmail() {
     setResent(false)
 
     try {
-      const { error: resendErr } = await supabase.auth.resend({
-        type: 'signup',
+      const { error: resendErr } = await supabase.auth.signInWithOtp({
         email,
+        options: {
+          shouldCreateUser: mode === 'register',
+        }
       })
-
       if (resendErr) throw resendErr
+
       setResent(true)
       setCountdown(60)
       setTimeout(() => setResent(false), 4000)
@@ -161,18 +196,15 @@ export default function VerifyEmail() {
               background: 'rgba(226, 232, 104, 0.15)',
               border: '1px solid rgba(226, 232, 104, 0.4)',
               borderRadius: 10, padding: '10px 14px',
-              fontSize: '0.85rem', color: '#5a6000', marginBottom: 16,
-              display: 'flex', alignItems: 'center', gap: 8,
+              fontSize: '0.85rem', color: '#5a6000',
+              marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <ShieldCheck size={16} /> Codigo reenviado exitosamente
             </div>
           )}
 
           {/* OTP Input */}
-          <div style={{
-            display: 'flex', gap: 8, justifyContent: 'center',
-            marginBottom: 24,
-          }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 24 }}>
             {otp.map((digit, i) => (
               <input
                 key={i}
@@ -185,15 +217,10 @@ export default function VerifyEmail() {
                 onKeyDown={e => handleKeyDown(i, e)}
                 onPaste={i === 0 ? handlePaste : undefined}
                 style={{
-                  width: 48, height: 56,
-                  textAlign: 'center',
-                  fontSize: '1.4rem',
-                  fontWeight: 700,
-                  color: '#825DC7',
+                  width: 48, height: 56, textAlign: 'center',
+                  fontSize: '1.4rem', fontWeight: 700, color: '#825DC7',
                   border: digit ? '2px solid #825DC7' : '2px solid #e0dce8',
-                  borderRadius: 12,
-                  outline: 'none',
-                  transition: 'all 0.15s',
+                  borderRadius: 12, outline: 'none', transition: 'all 0.15s',
                   background: digit ? 'rgba(130, 93, 199, 0.04)' : '#fff',
                   fontFamily: "'DM Sans', sans-serif",
                 }}
@@ -231,10 +258,7 @@ export default function VerifyEmail() {
               }}
             >
               <RefreshCw size={14} />
-              {resending ? 'Enviando...'
-                : countdown > 0 ? `Reenviar en ${countdown}s`
-                : 'Reenviar codigo'
-              }
+              {resending ? 'Enviando...' : countdown > 0 ? `Reenviar en ${countdown}s` : 'Reenviar codigo'}
             </button>
           </div>
         </div>
