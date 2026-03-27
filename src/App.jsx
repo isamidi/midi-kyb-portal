@@ -1,7 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from './lib/supabaseClient'
-
 import Register from './pages/Register'
 import Login from './pages/Login'
 import KYBUpload from './pages/KYBUpload'
@@ -10,17 +9,22 @@ import KYBReview from './pages/KYBReview'
 import StatusDashboard from './pages/StatusDashboard'
 import ContractSign from './pages/ContractSign'
 import Layout from './components/Layout'
+import PortalLayout from './components/PortalLayout'
+import PortalDashboard from './pages/portal/PortalDashboard'
+import Personas from './pages/portal/Personas'
+import AddPersonas from './pages/portal/AddPersonas'
+import Payments from './pages/portal/Payments'
+import RegistrationLink from './pages/portal/RegistrationLink'
+import PortalSettings from './pages/portal/PortalSettings'
 
 // Auth context
 export const AuthContext = createContext(null)
-
 export function useAuth() {
   return useContext(AuthContext)
 }
 
 // KYB data context (shared state across KYB steps)
 export const KYBContext = createContext(null)
-
 export function useKYB() {
   return useContext(KYBContext)
 }
@@ -44,10 +48,35 @@ function ProtectedRoute({ children }) {
   return children
 }
 
+// Portal route - redirects to KYB if not approved
+function PortalRoute({ children }) {
+  const { user, loading, applicationStatus } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="page-center">
+        <div className="spinner spinner-purple" style={{ width: 32, height: 32 }} />
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  // Only allow portal access if contract is signed or approved
+  if (applicationStatus !== 'contract_signed' && applicationStatus !== 'approved') {
+    return <Navigate to="/kyb/upload" replace />
+  }
+
+  return children
+}
+
 export default function App() {
   const [user, setUser] = useState(null)
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [applicationStatus, setApplicationStatus] = useState(null)
   const [kybData, setKybData] = useState({
     documents: [],
     formFields: {},
@@ -80,14 +109,26 @@ export default function App() {
             ...prev,
             companyId: companyUser.companies.id,
           }))
+
+          // Load application status
+          const { data: app } = await supabase
+            .from('kyb_applications')
+            .select('status')
+            .eq('company_id', companyUser.companies.id)
+            .single()
+
+          if (app) {
+            setApplicationStatus(app.status)
+          }
         }
       }
-
       setLoading(false)
     })
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
     })
 
@@ -98,16 +139,33 @@ export default function App() {
     await supabase.auth.signOut()
     setUser(null)
     setCompany(null)
-    setKybData({ documents: [], formFields: {}, applicationId: null, status: null, companyId: null })
+    setApplicationStatus(null)
+    setKybData({
+      documents: [],
+      formFields: {},
+      applicationId: null,
+      status: null,
+      companyId: null,
+    })
+  }
+
+  // Determine where authenticated users should go
+  const getDefaultRoute = () => {
+    if (applicationStatus === 'contract_signed' || applicationStatus === 'approved') {
+      return '/portal'
+    }
+    return '/kyb/upload'
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut, company }}>
+    <AuthContext.Provider value={{ user, loading, signOut, company, applicationStatus, setApplicationStatus }}>
       <KYBContext.Provider value={{ kybData, setKybData, companyId: company?.id }}>
         <Routes>
           <Route path="/" element={<Register />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
+
+          {/* KYB Flow */}
           <Route
             path="/kyb/*"
             element={
@@ -125,7 +183,31 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/" replace />} />
+
+          {/* Portal Empresarial */}
+          <Route
+            path="/portal"
+            element={
+              <PortalRoute>
+                <PortalLayout />
+              </PortalRoute>
+            }
+          >
+            <Route index element={<PortalDashboard />} />
+            <Route path="personas" element={<Personas />} />
+            <Route path="agregar" element={<AddPersonas />} />
+            <Route path="pagos" element={<Payments />} />
+            <Route path="historial" element={<Payments />} />
+            <Route path="link" element={<RegistrationLink />} />
+            <Route path="ajustes" element={<PortalSettings />} />
+          </Route>
+
+          {/* Catch-all */}
+          <Route path="*" element={
+            <ProtectedRoute>
+              <Navigate to={getDefaultRoute()} replace />
+            </ProtectedRoute>
+          } />
         </Routes>
       </KYBContext.Provider>
     </AuthContext.Provider>
