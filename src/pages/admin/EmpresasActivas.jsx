@@ -76,15 +76,18 @@ const EmpresasActivas = () => {
       if (paymentError) throw paymentError;
 
       // Get unique company IDs from payment records
-      const companyIds = [...new Set(paymentRecords?.map((pr) => pr.company_id) || [])];
+      const companyIds = [...new Set(paymentRecords?.map((pr) => pr.company_id).filter(Boolean) || [])];
 
-      // Fetch company details
-      const { data: companies, error: companiesError } = await supabase
-        .from('companies')
-        .select('id, company_name, email, company_category_id, contract_signed_at, avatar_url')
-        .in('id', companyIds.length > 0 ? companyIds : [null]);
-
-      if (companiesError) throw companiesError;
+      // If no companies in payment records, return empty
+      let companies = [];
+      if (companyIds.length > 0) {
+        const { data: compData, error: companiesError } = await supabase
+          .from('companies')
+          .select('id, name, contact_email, category_id, contract_signed_at, avatar_url')
+          .in('id', companyIds);
+        if (companiesError) throw companiesError;
+        companies = compData || [];
+      }
 
       // Fetch company categories
       const { data: categories, error: categoriesError } = await supabase
@@ -115,7 +118,7 @@ const EmpresasActivas = () => {
       const companyRecords = paymentRecords?.map((pr) => ({
         ...pr,
         company: companyMap[pr.company_id],
-        category: categoryMap[companyMap[pr.company_id]?.company_category_id],
+        category: categoryMap[companyMap[pr.company_id]?.category_id],
       })) || [];
 
       // Calculate summary data
@@ -255,15 +258,15 @@ const EmpresasActivas = () => {
             style={styles.navButton}
             title="Mes anterior"
           >
-            â
+            ←
           </button>
           <span style={styles.monthDisplay}>{monthDisplay}</span>
           <button
             onClick={handleNextMonth}
             style={styles.navButton}
-            title="PrÃ³ximo mes"
+            title="Próximo mes"
           >
-            â
+            →
           </button>
         </div>
       </div>
@@ -322,7 +325,7 @@ const EmpresasActivas = () => {
       {/* Category Breakdown */}
       {data?.categoryBreakdown && data.categoryBreakdown.length > 0 && (
         <div>
-          <h2 style={styles.sectionTitle}>Desglose por categorÃ­a</h2>
+          <h2 style={styles.sectionTitle}>Desglose por categoría</h2>
           <div style={styles.categoryCardsGrid}>
             {data.categoryBreakdown.map((category) => (
               <div key={category.id} style={styles.categoryCard}>
@@ -364,7 +367,7 @@ const EmpresasActivas = () => {
               <thead>
                 <tr style={styles.tableHeader}>
                   <th style={styles.th}>Empresa</th>
-                  <th style={styles.th}>CategorÃ­a</th>
+                  <th style={styles.th}>Categoría</th>
                   <th style={styles.th}>Monto pagado</th>
                   <th style={styles.th}>Personas</th>
                   <th style={styles.th}>Cambio</th>
@@ -384,11 +387,11 @@ const EmpresasActivas = () => {
                               backgroundColor: record.category?.color || colors.purple,
                             }}
                           >
-                            {getInitials(record.company?.company_name)}
+                            {getInitials(record.company?.name)}
                           </div>
                           <div style={styles.companyInfo}>
-                            <p style={styles.companyName}>{record.company?.company_name}</p>
-                            <p style={styles.companyEmail}>{record.company?.email}</p>
+                            <p style={styles.companyName}>{record.company?.name}</p>
+                            <p style={styles.companyEmail}>{record.company?.contact_email}</p>
                           </div>
                         </div>
                       </td>
@@ -400,7 +403,7 @@ const EmpresasActivas = () => {
                             color: record.category?.color || colors.purple,
                           }}
                         >
-                          {record.category?.name || 'Sin categorÃ­a'}
+                          {record.category?.name || 'Sin categoría'}
                         </span>
                       </td>
                       <td style={styles.td}>
@@ -506,7 +509,8 @@ const styles = {
     color: '#26213F',
     minWidth: '140px',
     textAlign: 'center',
-  },  cardsGrid: {
+  },
+  cardsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '20px',
