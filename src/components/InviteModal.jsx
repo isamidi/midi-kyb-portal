@@ -247,9 +247,9 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                                                                                               }}
                                                                                           >
                                                                         {sending ? (
-                                                                                                                  <><div className="spinner" style={{ width: 14, height: 14 }} /> Enviando...</>>
+                                                                                                                  <><div className="spinner" style={{ width: 14, height: 14 }} /> Enviando...</>
                                                                                                                 ) : (
-                                                                                                                  <><Plus size={16} /> Invitar</>>
+                                                                                                                  <><Plus size={16} /> Invitar</>
                                                                                                                 )}
                                                                       </button>
                                                     </div>
