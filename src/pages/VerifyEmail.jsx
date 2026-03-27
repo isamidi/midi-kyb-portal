@@ -3,6 +3,8 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { Mail, ShieldCheck, Loader, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react'
 
+const OTP_LENGTH = 8
+
 export default function VerifyEmail() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -10,7 +12,7 @@ export default function VerifyEmail() {
   const companyName = location.state?.company_name || ''
   const mode = location.state?.mode || 'register'
 
-  const [otp, setOtp] = useState(['', '', '', '', '', ''])
+  const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [resending, setResending] = useState(false)
@@ -18,7 +20,6 @@ export default function VerifyEmail() {
   const [countdown, setCountdown] = useState(0)
   const inputRefs = useRef([])
 
-  // Focus first input on mount
   useEffect(() => {
     if (!email) {
       navigate('/register')
@@ -27,7 +28,6 @@ export default function VerifyEmail() {
     inputRefs.current[0]?.focus()
   }, [email, navigate])
 
-  // Resend countdown
   useEffect(() => {
     if (countdown <= 0) return
     const timer = setTimeout(() => setCountdown(c => c - 1), 1000)
@@ -39,7 +39,7 @@ export default function VerifyEmail() {
     const newOtp = [...otp]
     newOtp[index] = value
     setOtp(newOtp)
-    if (value && index < 5) {
+    if (value && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus()
     }
   }
@@ -52,21 +52,21 @@ export default function VerifyEmail() {
 
   const handlePaste = (e) => {
     e.preventDefault()
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH)
     if (pasted.length === 0) return
     const newOtp = [...otp]
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < OTP_LENGTH; i++) {
       newOtp[i] = pasted[i] || ''
     }
     setOtp(newOtp)
-    const focusIndex = Math.min(pasted.length, 5)
+    const focusIndex = Math.min(pasted.length, OTP_LENGTH - 1)
     inputRefs.current[focusIndex]?.focus()
   }
 
   const handleVerify = async () => {
     const token = otp.join('')
-    if (token.length !== 6) {
-      setError('Ingresa el codigo completo de 6 digitos')
+    if (token.length !== OTP_LENGTH) {
+      setError('Ingresa el codigo completo de ' + OTP_LENGTH + ' digitos')
       return
     }
 
@@ -83,9 +83,7 @@ export default function VerifyEmail() {
 
       const userId = verifyData.user?.id
 
-      // If coming from registration, create company records
       if (mode === 'register' && companyName && userId) {
-        // Check if company already exists for this user
         const { data: existingLink } = await supabase
           .from('company_users')
           .select('id')
@@ -115,7 +113,6 @@ export default function VerifyEmail() {
 
         navigate('/kyb/upload')
       } else {
-        // Login flow - redirect based on status
         navigate('/kyb/upload')
       }
     } catch (err) {
@@ -124,7 +121,7 @@ export default function VerifyEmail() {
           ? 'Codigo invalido o expirado. Intenta de nuevo.'
           : err.message
       )
-      setOtp(['', '', '', '', '', ''])
+      setOtp(Array(OTP_LENGTH).fill(''))
       inputRefs.current[0]?.focus()
     } finally {
       setLoading(false)
@@ -140,9 +137,7 @@ export default function VerifyEmail() {
     try {
       const { error: resendErr } = await supabase.auth.signInWithOtp({
         email,
-        options: {
-          shouldCreateUser: mode === 'register',
-        }
+        options: { shouldCreateUser: mode === 'register' }
       })
       if (resendErr) throw resendErr
 
@@ -156,16 +151,15 @@ export default function VerifyEmail() {
     }
   }
 
-  // Auto-submit when all 6 digits entered
   useEffect(() => {
-    if (otp.every(d => d !== '') && otp.join('').length === 6) {
+    if (otp.every(d => d !== '') && otp.join('').length === OTP_LENGTH) {
       handleVerify()
     }
   }, [otp])
 
   return (
     <div className="page-center">
-      <div style={{ width: '100%', maxWidth: 420 }}>
+      <div style={{ width: '100%', maxWidth: 480 }}>
         <div className="text-center mb-4">
           <div style={{
             width: 64, height: 64, borderRadius: '50%',
@@ -177,7 +171,7 @@ export default function VerifyEmail() {
           </div>
           <h2 style={{ color: '#825DC7', marginBottom: 8 }}>Verifica tu email</h2>
           <p className="text-muted" style={{ fontSize: '0.9rem' }}>
-            Enviamos un codigo de 6 digitos a
+            Enviamos un codigo de {OTP_LENGTH} digitos a
           </p>
           <p style={{ fontWeight: 600, color: '#26213F', fontSize: '0.95rem' }}>
             {email}
@@ -203,8 +197,7 @@ export default function VerifyEmail() {
             </div>
           )}
 
-          {/* OTP Input */}
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 24 }}>
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 24 }}>
             {otp.map((digit, i) => (
               <input
                 key={i}
@@ -217,10 +210,10 @@ export default function VerifyEmail() {
                 onKeyDown={e => handleKeyDown(i, e)}
                 onPaste={i === 0 ? handlePaste : undefined}
                 style={{
-                  width: 48, height: 56, textAlign: 'center',
-                  fontSize: '1.4rem', fontWeight: 700, color: '#825DC7',
+                  width: 42, height: 52, textAlign: 'center',
+                  fontSize: '1.3rem', fontWeight: 700, color: '#825DC7',
                   border: digit ? '2px solid #825DC7' : '2px solid #e0dce8',
-                  borderRadius: 12, outline: 'none', transition: 'all 0.15s',
+                  borderRadius: 10, outline: 'none', transition: 'all 0.15s',
                   background: digit ? 'rgba(130, 93, 199, 0.04)' : '#fff',
                   fontFamily: "'DM Sans', sans-serif",
                 }}
@@ -233,7 +226,7 @@ export default function VerifyEmail() {
           <button
             className="btn btn-primary btn-full"
             onClick={handleVerify}
-            disabled={loading || otp.join('').length !== 6}
+            disabled={loading || otp.join('').length !== OTP_LENGTH}
           >
             {loading
               ? <><Loader size={18} className="spinning" /> Verificando...</>
