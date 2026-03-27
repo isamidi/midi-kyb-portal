@@ -343,4 +343,4 @@ export default function KYBUpload() {
               </div>
         </div>
       )
-}</></></></div>
+}
