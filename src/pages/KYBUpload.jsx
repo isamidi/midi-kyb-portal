@@ -334,10 +334,10 @@ export default function KYBUpload() {
                                   disabled={!canContinue || uploading}
                                 >
                         {uploading
-                                      ? <><div className="spinner" /> Subiendo documentos...</>>
+                                      ? <><div className="spinner" /> Subiendo documentos...</>
                                       : Object.values(extracting).some(s => s === 'pending')
-                                        ? <><div className="spinner" /> Extrayendo información...</>>
-                                        : <>Continuar al formulario <ArrowRight size={18} /></>>
+                                        ? <><div className="spinner" /> Extrayendo información...</>
+                                        : <>Continuar al formulario <ArrowRight size={18} /></>
                         }
                       </button>
               </div>
