@@ -200,17 +200,17 @@ export default function KYBUpload() {
   return (
         <div className="animate-in">
               <h2 style={{ marginBottom: 8 }}>
-                      Sube los <span className="text-purple">documentos</span>span> de tu empresa
-              </h2>h2>
+                      Sube los <span className="text-purple">documentos</span> de tu empresa
+              </h2>
               <p className="text-muted" style={{ marginBottom: 8 }}>
                       Con estos documentos llenamos la mayor parte del formulario automáticamente.
                       Solo tendrás que completar lo que no podamos extraer.
-              </p>p>
+              </p>
         
               <div className="alert alert-info mb-4" style={{ marginTop: 16 }}>
                       <Info size={18} style={{ flexShrink: 0 }} />
-                      <span>PDF, JPG o PNG. Máximo 10MB por archivo. Los campos marcados con * son obligatorios.</span>span>
-              </div>div>
+                      <span>PDF, JPG o PNG. Máximo 10MB por archivo. Los campos marcados con * son obligatorios.</span>
+              </div>
         
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {REQUIRED_DOCS.map((doc) => {
@@ -230,21 +230,21 @@ export default function KYBUpload() {
                                                                                               <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                                                                                                 {hasFile && <CheckCircle size={16} color="#5a6000" />}
                                                                                                 {doc.label}
-                                                                                                {doc.required && <span style={{ color: 'var(--midi-orange)', fontSize: '0.8rem' }}>*</span>span>}
-                                                                                                </div>div>
-                                                                                              <div style={{ fontSize: '0.8rem', color: '#888' }}>{doc.hint}</div>div>
-                                                                            </div>div>
+                                                                                                {doc.required && <span style={{ color: 'var(--midi-orange)', fontSize: '0.8rem' }}>*</span>}
+                                                                                                </div>
+                                                                                              <div style={{ fontSize: '0.8rem', color: '#888' }}>{doc.hint}</div>
+                                                                            </div>
                                                             
                                                               {hasFile ? (
                                                                                 <div className="file-item" style={{ margin: 0, flex: 'none' }}>
                                                                                                     <FileText size={16} color="#825DC7" />
                                                                                                     <span className="file-name" style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                                                                       {files[doc.id].name}
-                                                                                                      </span>span>
+                                                                                                      </span>
                                                                                                     <button className="remove-btn" onClick={() => removeFile(doc.id)}>
                                                                                                                           <X size={16} />
-                                                                                                      </button>button>
-                                                                                </div>div>
+                                                                                                      </button>
+                                                                                </div>
                                                                               ) : (
                                                                                 <button
                                                                                                       onClick={() => fileInputRefs.current[doc.id]?.click()}
@@ -260,13 +260,13 @@ export default function KYBUpload() {
                                                                                                                             onChange={e => handleFileSelect(doc.id, e.target.files)}
                                                                                                                             style={{ display: 'none' }}
                                                                                                                           />
-                                                                                </button>button>
+                                                                                </button>
                                                                             )}
-                                                            </div>div>
-                                              </div>div>
+                                                            </div>
+                                              </div>
                                             )
                 })}
-              </div>div>
+              </div>
         
           {/* Progress indicator */}
               <div style={{
@@ -282,13 +282,13 @@ export default function KYBUpload() {
                       <div>
                                 <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
                                   {requiredUploaded} de {requiredCount} requeridos
-                                </span>span>
+                                </span>
                         {totalUploaded > requiredUploaded && (
                       <span style={{ color: '#888', fontSize: '0.85rem', marginLeft: 8 }}>
                                     (+{totalUploaded - requiredUploaded} opcionales)
-                      </span>span>
+                      </span>
                                 )}
-                      </div>div>
+                      </div>
                       <div style={{ width: 120, height: 6, background: '#eee', borderRadius: 3 }}>
                                 <div style={{
                       width: `${(requiredUploaded / requiredCount) * 100}%`,
@@ -297,8 +297,8 @@ export default function KYBUpload() {
                       borderRadius: 3,
                       transition: 'width 0.3s',
         }} />
-                      </div>div>
-              </div>div>
+                      </div>
+              </div>
         
           {/* Extraction status */}
           {Object.keys(extracting).length > 0 && (
@@ -307,8 +307,8 @@ export default function KYBUpload() {
                                         <Sparkles size={18} color="#825DC7" />
                                         <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#825DC7' }}>
                                                       Extrayendo información con AI...
-                                        </span>span>
-                            </div>div>
+                                        </span>
+                            </div>
                     {Object.entries(extracting).map(([docId, status]) => {
                                 const doc = REQUIRED_DOCS.find(d => d.id === docId)
                                               return (
@@ -316,16 +316,16 @@ export default function KYBUpload() {
                                                                 {status === 'pending' && <Loader2 size={14} className="spinning" style={{ color: '#825DC7' }} />}
                                                                 {status === 'done' && <CheckCircle size={14} color="#5a6000" />}
                                                                 {status === 'error' && <X size={14} color="#e74c3c" />}
-                                                                              <span>{doc?.label || docId}</span>span>
-                                                                {status === 'done' && <span style={{ color: '#5a6000', fontSize: '0.75rem' }}>Datos extraídos</span>span>}
-                                                                {status === 'error' && <span style={{ color: '#e74c3c', fontSize: '0.75rem' }}>Se llenará manualmente</span>span>}
-                                                              </div>div>
+                                                                              <span>{doc?.label || docId}</span>
+                                                                {status === 'done' && <span style={{ color: '#5a6000', fontSize: '0.75rem' }}>Datos extraídos</span>}
+                                                                {status === 'error' && <span style={{ color: '#e74c3c', fontSize: '0.75rem' }}>Se llenará manualmente</span>}
+                                                              </div>
                                                             )
                     })}
-                  </div>div>
+                  </div>
               )}
         
-          {error && <div className="alert alert-error mt-2">{error}</div>div>}
+          {error && <div className="alert alert-error mt-2">{error}</div>}
         
               <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
                       <button
@@ -339,8 +339,8 @@ export default function KYBUpload() {
                                         ? <><div className="spinner" /> Extrayendo información...</>>
                                         : <>Continuar al formulario <ArrowRight size={18} /></>>
                         }
-                      </button>button>
-              </div>div>
-        </div>div>
+                      </button>
+              </div>
+        </div>
       )
 }</></></></div>
