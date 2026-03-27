@@ -81,9 +81,9 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
   const getStatusLabel = (status) => {
         switch (status) {
           case 'active':
-                    return <span style={{ color: '#5a6000', fontSize: '0.75rem', fontWeight: 600 }}>ACTIVO</span>span>
+                    return <span style={{ color: '#5a6000', fontSize: '0.75rem', fontWeight: 600 }}>ACTIVO</span>
                       case 'invited':
-                    return <span style={{ color: '#F5812B', fontSize: '0.75rem', fontWeight: 600 }}>INVITADO</span>span>
+                    return <span style={{ color: '#F5812B', fontSize: '0.75rem', fontWeight: 600 }}>INVITADO</span>
                       default:
                     return status
         }
@@ -130,7 +130,7 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                       color: 'var(--midi-navy)',
         }}>
                                                     Equipo
-                                      </h3>h3>
+                                      </h3>
                                       <button
                                                     onClick={onClose}
                                                     style={{
@@ -143,8 +143,8 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                                                     }}
                                                   >
                                                   <X size={20} />
-                                      </button>button>
-                          </div>div>
+                                      </button>
+                          </div>
                 
                   {/* Content */}
                         <div style={{ padding: '24px' }}>
@@ -184,7 +184,7 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                                                                                           <Clock size={14} color="#F5812B" />
                                                                                         )}
                                                                                       {member.email}
-                                                                                      </div>div>
+                                                                                      </div>
                                                                                     <div style={{
                                                                                         fontSize: '0.75rem',
                                                                                         color: '#888',
@@ -192,13 +192,13 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                                                                                         textTransform: 'capitalize',
                                                               }}>
                                                                                       {member.role}
-                                                                                      </div>div>
-                                                              </div>div>
+                                                                                      </div>
+                                                              </div>
                                             {getStatusLabel(member.status)}
-                                          </div>div>
+                                          </div>
                                         ))}
-                                    </div>div>
-                      </div>div>
+                                    </div>
+                      </div>
                                   )}
                         
                           {/* Invite section - only show if user is admin */}
@@ -251,8 +251,8 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                                                                                                                 ) : (
                                                                                                                   <><Plus size={16} /> Invitar</>>
                                                                                                                 )}
-                                                                      </button>button>
-                                                    </div>div>
+                                                                      </button>
+                                                    </div>
                                     
                                       {error && (
                                           <div style={{
@@ -264,7 +264,7 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                                           }}>
                                                               <AlertCircle size={14} />
                                             {error}
-                                          </div>div>
+                                          </div>
                                                     )}
                                     
                                       {success && (
@@ -277,7 +277,7 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                                           }}>
                                                               <Mail size={14} />
                                             {success}
-                                          </div>div>
+                                          </div>
                                                     )}
                                     </form>form>
                       
@@ -289,8 +289,8 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                       }}>
                                                     Los miembros invitados recibirán un correo para unirse al equipo.
                                                     Solo los administradores pueden invitar nuevos miembros.
-                                    </p>p>
-                      </div>div>
+                                    </p>
+                      </div>
                                   )}
                         
                           {!userRole || userRole !== 'admin' && teamMembers.length === 0 && (
@@ -299,12 +299,12 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                                       padding: '20px 0',
                                       color: '#888',
                       }}>
-                                    <p style={{ fontSize: '0.9rem' }}>No hay miembros del equipo aún</p>p>
-                                    <p style={{ fontSize: '0.8rem' }}>Solo administradores pueden invitar miembros</p>p>
-                      </div>div>
+                                    <p style={{ fontSize: '0.9rem' }}>No hay miembros del equipo aún</p>
+                                    <p style={{ fontSize: '0.8rem' }}>Solo administradores pueden invitar miembros</p>
+                      </div>
                                   )}
-                        </div>div>
-                </div>div>
-        </div>div>
+                        </div>
+                </div>
+        </div>
       )
 }</></></button>
