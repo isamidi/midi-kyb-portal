@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { supabase } from './lib/supabaseClient'
 import Register from './pages/Register'
 import Login from './pages/Login'
+import VerifyEmail from './pages/VerifyEmail'
 import KYBUpload from './pages/KYBUpload'
 import KYBForm from './pages/KYBForm'
 import KYBReview from './pages/KYBReview'
@@ -64,7 +65,6 @@ function PortalRoute({ children }) {
     return <Navigate to="/login" replace />
   }
 
-  // Only allow portal access if contract is signed or approved
   if (applicationStatus !== 'contract_signed' && applicationStatus !== 'approved') {
     return <Navigate to="/kyb/upload" replace />
   }
@@ -86,12 +86,10 @@ export default function App() {
   })
 
   useEffect(() => {
-    // Check active session and load company info
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null)
 
       if (session?.user) {
-        // Load company info from company_users junction table
         const { data: companyUser } = await supabase
           .from('company_users')
           .select('companies(*), role')
@@ -110,7 +108,6 @@ export default function App() {
             companyId: companyUser.companies.id,
           }))
 
-          // Load application status
           const { data: app } = await supabase
             .from('kyb_applications')
             .select('status')
@@ -125,7 +122,6 @@ export default function App() {
       setLoading(false)
     })
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -149,7 +145,6 @@ export default function App() {
     })
   }
 
-  // Determine where authenticated users should go
   const getDefaultRoute = () => {
     if (applicationStatus === 'contract_signed' || applicationStatus === 'approved') {
       return '/portal'
@@ -164,6 +159,7 @@ export default function App() {
           <Route path="/" element={<Register />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
 
           {/* KYB Flow */}
           <Route
