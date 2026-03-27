@@ -1,15 +1,13 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import { Building2, Mail, Lock, Loader } from 'lucide-react'
+import { Building2, Mail, Loader } from 'lucide-react'
 
 export default function Register() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
     company_name: '',
     email: '',
-    password: '',
-    confirm: ''
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -19,52 +17,27 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
-
-    if (form.password !== form.confirm) {
-      setError('Las contrasenas no coinciden')
-      return
-    }
-    if (form.password.length < 6) {
-      setError('La contrasena debe tener al menos 6 caracteres')
-      return
-    }
-
     setLoading(true)
 
     try {
-      const { data: authData, error: authErr } = await supabase.auth.signUp({
+      // Send OTP code to email (passwordless)
+      const { error: otpErr } = await supabase.auth.signInWithOtp({
         email: form.email,
-        password: form.password,
         options: {
+          shouldCreateUser: true,
           data: { company_name: form.company_name }
         }
       })
+      if (otpErr) throw otpErr
 
-      if (authErr) throw authErr
-
-      const userId = authData.user?.id
-      if (userId) {
-        // Create company and related records
-        const { data: company, error: compErr } = await supabase
-          .from('companies').insert({ name: form.company_name }).select().single()
-
-        if (compErr) throw compErr
-
-        await supabase.from('company_users').insert({
-          company_id: company.id,
-          user_id: userId,
-          role: 'admin'
-        })
-
-        await supabase.from('kyb_applications').insert({
-          company_id: company.id,
-          status: 'draft',
-          step: 1
-        })
-      }
-
-      // Redirect to email verification with OTP
-      navigate('/verify-email', { state: { email: form.email } })
+      // Redirect to OTP verification page
+      navigate('/verify-email', {
+        state: {
+          email: form.email,
+          company_name: form.company_name,
+          mode: 'register'
+        }
+      })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -109,36 +82,14 @@ export default function Register() {
               />
             </div>
 
-            <div className="input-group">
-              <label>Contrasena</label>
-              <input
-                className="input-field"
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="Minimo 6 caracteres"
-                required
-              />
-            </div>
-
-            <div className="input-group">
-              <label>Confirmar Contrasena</label>
-              <input
-                className="input-field"
-                type="password"
-                name="confirm"
-                value={form.confirm}
-                onChange={handleChange}
-                placeholder="Repite tu contrasena"
-                required
-              />
-            </div>
+            <p style={{ fontSize: '0.8rem', color: '#9a92a8', marginBottom: 16, textAlign: 'center' }}>
+              Te enviaremos un codigo de verificacion a tu email
+            </p>
 
             <button className="btn btn-primary btn-full" type="submit" disabled={loading}>
               {loading
-                ? <><Loader size={18} className="spinning" /> Creando cuenta...</>
-                : 'Crear Cuenta'
+                ? <><Loader size={18} className="spinning" /> Enviando codigo...</>
+                : 'Continuar'
               }
             </button>
           </form>
