@@ -85,8 +85,8 @@ export default function Layout({ children }) {
                                             <text x="50" y="65" textAnchor="middle" fill="#fff"
                                                             fontFamily="Cormorant Garamond, serif" fontWeight="600" fontSize="42">
                                                           M
-                                            </text>text>
-                                </svg>svg>
+                                            </text>
+                                </svg>
                                 <span style={{
                       fontFamily: "'Cormorant Garamond', serif",
                       fontSize: '1.3rem',
@@ -185,7 +185,7 @@ export default function Layout({ children }) {
                       <div className="container" style={{ maxWidth: 720 }}>
                         {children}
                       </div>
-              </main>main>
+              </main>
         
           {/* Footer */}
               <footer style={{
@@ -195,7 +195,7 @@ export default function Layout({ children }) {
                   color: '#aaa',
         }}>
                       Midi Technologies Inc. All rights reserved.
-              </footer>footer>
+              </footer>
         
           {/* Team Modal */}
               <InviteModal
@@ -206,4 +206,4 @@ export default function Layout({ children }) {
                       />
         </div>
       )
-}</div>
+}
