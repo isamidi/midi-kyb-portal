@@ -94,13 +94,13 @@ export default function Layout({ children }) {
                       color: 'var(--midi-navy)',
         }}>
                                             Midi for Business
-                                </span>span>
-                      </div>div>
+                                </span>
+                      </div>
               
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                 <span style={{ fontSize: '0.85rem', color: '#888' }}>
                                   {user?.email}
-                                </span>span>
+                                </span>
                                 <button
                                               onClick={() => setTeamModalOpen(true)}
                                               style={{
@@ -121,7 +121,7 @@ export default function Layout({ children }) {
                                             >
                                             <Users size={16} />
                                             Equipo
-                                </button>button>
+                                </button>
                                 <button
                                               onClick={() => { signOut(); navigate('/') }}
                                               style={{
@@ -141,9 +141,9 @@ export default function Layout({ children }) {
                                             >
                                             <LogOut size={16} />
                                             Salir
-                                </button>button>
-                      </div>div>
-              </header>header>
+                                </button>
+                      </div>
+              </header>
         
           {/* Progress bar */}
               <div style={{
@@ -169,22 +169,22 @@ export default function Layout({ children }) {
                                                                                                                                   animation: 'pulse-red 2s infinite',
                                                                                                               } : undefined}>
                                                                                                               {isCompleted ? <Check size={18} /> : isAlert ? <AlertCircle size={16} /> : step.num}
-                                                                                                              </div>div>
+                                                                                                              </div>
                                                                                                             <span className="step-label" style={isAlert ? { color: '#e74c3c', fontWeight: 600 } : undefined}>
                                                                                                               {step.label}
-                                                                                                              </span>span>
-                                                                                            </div>div>
+                                                                                                              </span>
+                                                                                            </div>
                                                                                         )
                                   })}
-                                </div>div>
-                      </div>div>
-              </div>div>
+                                </div>
+                      </div>
+              </div>
         
           {/* Content */}
               <main style={{ flex: 1, padding: '40px 24px' }}>
                       <div className="container" style={{ maxWidth: 720 }}>
                         {children}
-                      </div>div>
+                      </div>
               </main>main>
         
           {/* Footer */}
@@ -204,6 +204,6 @@ export default function Layout({ children }) {
                         isOpen={teamModalOpen}
                         onClose={() => setTeamModalOpen(false)}
                       />
-        </div>div>
+        </div>
       )
 }</div>
