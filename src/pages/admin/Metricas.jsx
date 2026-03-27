@@ -61,7 +61,7 @@ const Metricas = () => {
       // Fetch stage history for timing calculations
       const { data: stageHistory, error: stageHistoryError } = await supabase
         .from('stage_history')
-        .select('company_id, from_stage, to_stage, transitioned_at, created_at');
+        .select('company_id, from_stage, to_stage, changed_at');
 
       if (stageHistoryError) throw stageHistoryError;
 
@@ -179,20 +179,20 @@ const Metricas = () => {
   const calculateStageTimings = (stageHistory) => {
     // Calculate average time spent in each stage
     const stageTimings = [
-      { label: 'Registro â Documentos', stages: ['registro', 'documentos'] },
-      { label: 'Documentos â Compliance Midi', stages: ['documentos', 'compliance_midi'] },
-      { label: 'Compliance Midi â Compliance Banco', stages: ['compliance_midi', 'compliance_banco'] },
-      { label: 'Compliance Banco â Contrato', stages: ['compliance_banco', 'contrato'] },
-      { label: 'Contrato â Firma', stages: ['contrato', 'firmadas'] },
-      { label: 'Firma â Primer pago', stages: ['firmadas', 'activo'] },
+      { label: 'Registro → Documentos', stages: ['registro', 'documentos'] },
+      { label: 'Documentos → Compliance Midi', stages: ['documentos', 'compliance_midi'] },
+      { label: 'Compliance Midi → Compliance Banco', stages: ['compliance_midi', 'compliance_banco'] },
+      { label: 'Compliance Banco → Contrato', stages: ['compliance_banco', 'contrato'] },
+      { label: 'Contrato → Firma', stages: ['contrato', 'firmadas'] },
+      { label: 'Firma → Primer pago', stages: ['firmadas', 'activo'] },
     ];
 
     const timings = stageTimings.map((timing) => {
       const transitions = stageHistory
         ?.filter((sh) => sh.from_stage === timing.stages[0] && sh.to_stage === timing.stages[1])
         ?.map((sh) => {
-          const from = new Date(sh.created_at || sh.transitioned_at);
-          const to = new Date(sh.transitioned_at);
+          const from = new Date(sh.changed_at);
+          const to = new Date(sh.changed_at);
           return (to - from) / (1000 * 60 * 60 * 24);
         }) || [];
 
@@ -269,7 +269,7 @@ const Metricas = () => {
         <div style={styles.loadingContainer}>
           <div style={styles.spinner}></div>
           <p style={{ fontFamily: "'DM Sans', sans-serif", color: colors.navy }}>
-            Cargando mÃ©tricas...
+            Cargando métricas...
           </p>
         </div>
       </div>
@@ -292,15 +292,15 @@ const Metricas = () => {
   return (
     <div style={styles.pageContainer}>
       {/* Title */}
-      <h1 style={styles.pageTitle}>MÃ©tricas de Negocio</h1>
+      <h1 style={styles.pageTitle}>Métricas de Negocio</h1>
 
       {/* Top KPI Cards */}
       <div style={styles.kpiGrid}>
         {/* Card 1: Tiempo promedio registro a primer pago */}
         <div style={styles.kpiCard}>
-          <p style={styles.kpiLabel}>Tiempo promedio registro â primer pago</p>
+          <p style={styles.kpiLabel}>Tiempo promedio registro → primer pago</p>
           <p style={styles.kpiValue}>{data?.avgDaysToFirstPayment || 0}</p>
-          <p style={styles.kpiSubtitle}>dÃ­as</p>
+          <p style={styles.kpiSubtitle}>días</p>
         </div>
 
         {/* Card 2: Empresas que completaron el funnel */}
@@ -325,9 +325,9 @@ const Metricas = () => {
         </div>
       </div>
 
-      {/* Funnel de ConversiÃ³n */}
+      {/* Funnel de Conversión */}
       <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Funnel de ConversiÃ³n</h2>
+        <h2 style={styles.sectionTitle}>Funnel de Conversión</h2>
         <div style={styles.funnelContainer}>
           {data?.funnelData?.map((stage, index) => {
             const maxCount = Math.max(...(data?.funnelData?.map((s) => s.count) || [1]));
@@ -385,7 +385,7 @@ const Metricas = () => {
                   color: isMax ? colors.negative : colors.navy,
                   fontWeight: isMax ? '700' : '600',
                 }}>
-                  {timing.avgDays} dÃ­as
+                  {timing.avgDays} días
                 </p>
               </div>
             );
