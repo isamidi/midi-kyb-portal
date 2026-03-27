@@ -153,7 +153,7 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                       <div style={{ marginBottom: 28 }}>
                                     <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 12, color: 'var(--midi-navy)' }}>
                                                     Miembros del equipo ({teamMembers.length})
-                                    </h4>h4>
+                                    </h4>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                       {teamMembers.map((member) => (
                                           <div
@@ -206,7 +206,7 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                       <div>
                                     <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 12, color: 'var(--midi-navy)' }}>
                                                     Invitar miembro
-                                    </h4>h4>
+                                    </h4>
                       
                                     <form onSubmit={handleInvite} style={{
                                         padding: '16px',
@@ -279,7 +279,7 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                                             {success}
                                           </div>
                                                     )}
-                                    </form>form>
+                                    </form>
                       
                                     <p style={{
                                         fontSize: '0.75rem',
@@ -307,4 +307,4 @@ export default function InviteModal({ companyId, userRole, isOpen, onClose }) {
                 </div>
         </div>
       )
-}</></></button>
+}
