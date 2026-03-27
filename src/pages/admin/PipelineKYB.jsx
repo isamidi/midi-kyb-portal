@@ -81,8 +81,8 @@ const PipelineKYB = () => {
       const term = searchTerm.toLowerCase();
       result = result.filter(
         (c) =>
-          c.company_name?.toLowerCase().includes(term) ||
-          c.email?.toLowerCase().includes(term)
+          c.name?.toLowerCase().includes(term) ||
+          c.contact_email?.toLowerCase().includes(term)
       );
     }
 
@@ -106,13 +106,7 @@ const PipelineKYB = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('companies')
-        .select(
-          `
-          *,
-          company_categories(name),
-          admin_users(name)
-        `
-        )
+        .select('*')
         .order('registered_at', { ascending: false });
 
       if (error) throw error;
@@ -273,9 +267,9 @@ const PipelineKYB = () => {
     try {
       const { error } = await supabase.from('companies').insert([
         {
-          company_name: formData.name,
-          email: formData.email,
-          category: formData.category,
+          name: formData.name,
+          contact_email: formData.email,
+          category_id: formData.category,
           stage: 'registro',
           registered_at: new Date().toISOString(),
           stage_entered_at: new Date().toISOString(),
@@ -398,8 +392,8 @@ const PipelineKYB = () => {
               <th style={styles.tableCell}>Empresa</th>
               <th style={styles.tableCell}>Etapa</th>
               <th style={styles.tableCell}>Vendedor</th>
-              <th style={styles.tableCell}>DÃ­as en etapa</th>
-              <th style={styles.tableCell}>DÃ­as totales</th>
+              <th style={styles.tableCell}>Días en etapa</th>
+              <th style={styles.tableCell}>Días totales</th>
               <th style={styles.tableCell}>Solicitudes</th>
               {['activacion', 'activo'].includes(activeStageFilter) && (
                 <th style={styles.tableCell}>Activacion</th>
@@ -423,11 +417,11 @@ const PipelineKYB = () => {
                   <td style={styles.tableCell}>
                     <div style={styles.companyCell}>
                       <div style={styles.avatar}>
-                        {company.company_name?.charAt(0).toUpperCase() || 'C'}
+                        {company.name?.charAt(0).toUpperCase() || 'C'}
                       </div>
                       <div style={styles.companyInfo}>
-                        <p style={styles.companyName}>{company.company_name}</p>
-                        <p style={styles.companyEmail}>{company.email}</p>
+                        <p style={styles.companyName}>{company.name}</p>
+                        <p style={styles.companyEmail}>{company.contact_email}</p>
                       </div>
                     </div>
                   </td>
@@ -454,7 +448,7 @@ const PipelineKYB = () => {
                             }}
                             style={styles.stageChangeButton}
                           >
-                            â®
+                            ⋮
                           </button>
                           {stageDropdownCompanyId === company.id && (
                             <div style={styles.stageDropdown}>
@@ -498,7 +492,7 @@ const PipelineKYB = () => {
                     </p>
                   </td>
 
-                  {/* DÃ­as en etapa Column */}
+                  {/* Días en etapa Column */}
                   <td style={styles.tableCell}>
                     <p
                       style={{
@@ -511,7 +505,7 @@ const PipelineKYB = () => {
                     </p>
                   </td>
 
-                  {/* DÃ­as totales Column */}
+                  {/* Días totales Column */}
                   <td style={styles.tableCell}>
                     <p
                       style={{
@@ -652,14 +646,14 @@ const DetailPanel = ({
         <div style={styles.detailHeader}>
           <div style={styles.detailCompanyInfo}>
             <div style={styles.detailAvatar}>
-              {company.company_name?.charAt(0).toUpperCase() || 'C'}
+              {company.name?.charAt(0).toUpperCase() || 'C'}
             </div>
             <div>
-              <h2 style={styles.detailCompanyName}>{company.company_name}</h2>
-              <p style={styles.detailCompanyEmail}>{company.email}</p>
+              <h2 style={styles.detailCompanyName}>{company.name}</h2>
+              <p style={styles.detailCompanyEmail}>{company.contact_email}</p>
             </div>
           </div>
-          <button onClick={onClose} style={styles.closeButton}>â</button>
+          <button onClick={onClose} style={styles.closeButton}>✕</button>
         </div>
 
         {/* Stage Timeline */}
@@ -693,18 +687,7 @@ const DetailPanel = ({
         {['activacion', 'activo'].includes(company.stage) && (
           <div style={styles.detailSection}>
             <h3 style={styles.sectionTitle}>Activacion</h3>
-            <div style={styles.activationContainer}>
-              <div style={styles.progressContainer}>
-                <div style={styles.progressBar}>
-                  <div
-                    style={{
-                      ...styles.progressFill,
-                      width: `${personas.total > 0 ? (personas.activated / personas.total) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
-                <p style={styles.progressText}>
-                  {personas.activated}/{personas.total} activated
+            <div style={styles.activationContainer}>                  {personas.activated}/{personas.total} activated
                 </p>
               </div>
             </div>
@@ -821,7 +804,7 @@ const NewCompanyModal = ({ onClose, onCreate }) => {
             />
           </div>
           <div style={styles.formGroup}>
-            <label style={styles.formLabel}>CategorÃ­a</label>
+            <label style={styles.formLabel}>Categoría</label>
             <input
               type="text"
               value={formData.category}
@@ -1400,4 +1383,4 @@ const styles = {
   },
 };
 
-export default PipelineKYB;
+export default PipelineKYB;Page_Down
