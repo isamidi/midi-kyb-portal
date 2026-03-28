@@ -81,7 +81,6 @@ export default function VerifyEmail() {
       })
       if (verifyErr) throw verifyErr
 
-      // Check company_users
       const userId = data.user?.id || data.session?.user?.id
       if (!userId) throw new Error('No se pudo obtener el usuario')
 
@@ -106,7 +105,6 @@ export default function VerifyEmail() {
           navigate('/kyb/upload')
         }
       } else {
-        // NEW USER: Use RPC to create company + company_users + kyb_application
         const nameToUse = companyName || data.user?.user_metadata?.company_name || email.split('@')[0]
 
         const { data: onboardResult, error: onboardErr } = await supabase
@@ -116,10 +114,11 @@ export default function VerifyEmail() {
           })
 
         if (onboardErr) {
-          console.error('Onboarding error:', onboardErr)
-          throw new Error('Error creando la empresa. Intenta de nuevo.')
+          console.error('Onboarding error:', JSON.stringify(onboardErr))
+          throw new Error(onboardErr.message || 'Error en el registro')
         }
 
+        console.log('Onboarding success:', JSON.stringify(onboardResult))
         navigate('/kyb/upload')
       }
     } catch (err) {
