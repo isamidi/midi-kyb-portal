@@ -167,21 +167,24 @@ export default function KYBForm() {
     const loadData = async () => {
       setLoading(true)
       try {
-        // Load extracted fields from kyb_applications
-        const { data: app } = await supabase
+        // Load extracted data from kyb_applications
+        const { data: apps } = await supabase
           .from('kyb_applications')
-          .select('extracted_fields, status')
+          .select('extracted_data, status')
           .eq('company_id', companyId)
-          .single()
+          .limit(1)
+
+        const app = apps?.[0]
 
         // Load saved form data (if user saved before)
-        const { data: savedForm } = await supabase
+        const { data: savedForms } = await supabase
           .from('kyb_applications')
           .select('form_data')
           .eq('company_id', companyId)
-          .single()
+          .limit(1)
 
-        const extracted = app?.extracted_fields || {}
+        const savedForm = savedForms?.[0]
+        const extracted = app?.extracted_data || {}
         const saved = savedForm?.form_data || {}
 
         // Merge: saved data takes priority, then extracted, then empty
