@@ -5,11 +5,11 @@ import { supabase } from '../lib/supabaseClient'
 import { Upload, FileText, X, ArrowRight, Info, CheckCircle, Sparkles, Loader2, Plus } from 'lucide-react'
 
 /*
-  KYB Document Upload — Step 1
+  KYB Document Upload â Step 1
   Matches Jotform structure:
   1. Company Governance (Operating Agreement, Bylaws, etc.)
   2. Organization Chart (ownership & control structure)
-  3. Identification (IDs for UBOs 10%+, CEO, CFO, authorized reps) — multiple files
+  3. Identification (IDs for UBOs 10%+, CEO, CFO, authorized reps) â multiple files
   4. Bank Statement (most recent full calendar month)
 */
 
@@ -161,10 +161,7 @@ export default function KYBUpload() {
   }
 
   const handleContinue = async () => {
-    if (!canContinue) {
-      setError('Please upload all required documents to continue.')
-      return
-    }
+    // Navigation is always allowed - validation happens at submit in Review
 
     setUploading(true)
     setError('')
@@ -377,7 +374,7 @@ export default function KYBUpload() {
         <button
           className="btn btn-primary"
           onClick={handleContinue}
-          disabled={!canContinue || uploading}
+          disabled={uploading}
         >
           {uploading
             ? <><div className="spinner" /> Uploading documents...</>
