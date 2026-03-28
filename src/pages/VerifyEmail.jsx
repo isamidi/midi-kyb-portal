@@ -69,6 +69,7 @@ export default function VerifyEmail() {
       setError('Ingresa el codigo completo')
       return
     }
+
     setLoading(true)
     setError(null)
 
@@ -105,6 +106,50 @@ export default function VerifyEmail() {
           navigate('/kyb/upload')
         }
       } else {
+        // NEW USER: Create company, company_users, and kyb_application
+        const nameToUse = companyName || data.user?.user_metadata?.company_name || email.split('@')[0]
+
+        // 1. Create company
+        const { data: newCompany, error: companyErr } = await supabase
+          .from('companies')
+          .insert({ name: nameToUse, contact_email: email, status: 'active' })
+          .select('id')
+          .single()
+
+        if (companyErr) {
+          console.error('Error creating company:', companyErr)
+          throw new Error('Error creando la empresa. Intenta de nuevo.')
+        }
+
+        // 2. Create company_users link
+        const { error: cuErr } = await supabase
+          .from('company_users')
+          .insert({
+            company_id: newCompany.id,
+            user_id: userId,
+            email: email,
+            role: 'admin',
+            status: 'active'
+          })
+
+        if (cuErr) {
+          console.error('Error creating company_users:', cuErr)
+          throw new Error('Error vinculando usuario a empresa. Intenta de nuevo.')
+        }
+
+        // 3. Create kyb_application in draft
+        const { error: kybErr } = await supabase
+          .from('kyb_applications')
+          .insert({
+            company_id: newCompany.id,
+            status: 'draft'
+          })
+
+        if (kybErr) {
+          console.error('Error creating kyb_application:', kybErr)
+          // Non-blocking - user can still proceed
+        }
+
         navigate('/kyb/upload')
       }
     } catch (err) {
@@ -219,10 +264,8 @@ export default function VerifyEmail() {
             onClick={handleVerify}
             disabled={loading || otp.join('').length !== OTP_LENGTH}
           >
-            {loading
-              ? <><Loader size={18} className="spinning" /> Verificando...</>
-              : <><ShieldCheck size={18} /> Verificar codigo</>
-            }
+            {loading ? <><Loader size={18} className="spinning" /> Verificando...</>
+              : <><ShieldCheck size={18} /> Verificar codigo</>}
           </button>
 
           <div style={{ textAlign: 'center', marginTop: 20 }}>
