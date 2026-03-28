@@ -75,12 +75,13 @@ export default function KYBReview() {
     const loadData = async () => {
       setLoading(true)
       try {
-        const { data: app } = await supabase
+        const { data: apps } = await supabase
           .from('kyb_applications')
           .select('form_data, documents')
           .eq('company_id', companyId)
-          .single()
+          .limit(1)
 
+        const app = apps?.[0]
         if (app?.form_data) setFormData(app.form_data)
         if (app?.documents) setDocuments(app.documents)
       } catch (err) {
