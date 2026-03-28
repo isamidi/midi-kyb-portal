@@ -29,7 +29,7 @@ export default function Personas() {
 
   const loadData = async () => {
     try {
-      const { data } = await supabase.from('company_persons').select('*').eq('company_id', company.id).order('created_at', { ascending: false })
+      const { data } = await supabase.from('personas').select('*').eq('company_id', company.id).order('created_at', { ascending: false })
       setPersonas(data || [])
     } catch (err) { console.error(err) } finally { setLoading(false) }
   }
