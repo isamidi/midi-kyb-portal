@@ -23,8 +23,8 @@ export default function Payments() {
   const loadData = async () => {
     try {
       const [pRes, payRes] = await Promise.all([
-        supabase.from('company_persons').select('id, full_name, email, type').eq('company_id', company.id).eq('status', 'active'),
-        supabase.from('payments').select('*, company_persons(full_name)').eq('company_id', company.id).order('created_at', { ascending: false }).limit(50),
+        supabase.from('personas').select('id, full_name, email, type').eq('company_id', company.id).eq('status', 'active'),
+        supabase.from('payments').select('*, personas(full_name)').eq('company_id', company.id).order('created_at', { ascending: false }).limit(50),
       ])
       setPersonas(pRes.data || []); setPayments(payRes.data || [])
     } catch (err) { console.error(err) } finally { setLoading(false) }
@@ -81,7 +81,7 @@ export default function Payments() {
           <div className='card' style={{ padding: 0, overflow: 'hidden' }}>
             <table className='portal-table'><thead><tr><th>Persona</th><th>Monto</th><th>Tipo</th><th>Estado</th><th>Fecha</th></tr></thead>
               <tbody>{payments.map(pay => (<tr key={pay.id}>
-                <td style={{ fontWeight: 500 }}>{pay.company_persons?.full_name || 'Persona'}</td>
+                <td style={{ fontWeight: 500 }}>{pay.personas?.full_name || 'Persona'}</td>
                 <td style={{ fontWeight: 600 }}>${parseFloat(pay.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                 <td><span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: 8, background: pay.type === 'recurring' ? 'rgba(130,93,199,0.1)' : 'rgba(226,232,104,0.2)', color: pay.type === 'recurring' ? '#825DC7' : '#5a6000', fontWeight: 600 }}>{pay.type === 'recurring' ? 'Recurrente' : 'Unico'}</span></td>
                 <td><span className={'status-badge ' + (pay.status === 'completed' ? 'approved' : 'pending')}>{pay.status === 'completed' ? 'Completado' : 'Pendiente'}</span></td>
