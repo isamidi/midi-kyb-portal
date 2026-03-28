@@ -15,13 +15,13 @@ export default function PortalDashboard() {
 
   const loadDashboard = async () => {
     try {
-      const { count: totalPersonas } = await supabase.from('company_persons').select('*', { count: 'exact', head: true }).eq('company_id', company.id)
-      const { count: activePersonas } = await supabase.from('company_persons').select('*', { count: 'exact', head: true }).eq('company_id', company.id).eq('status', 'active')
+      const { count: totalPersonas } = await supabase.from('personas').select('*', { count: 'exact', head: true }).eq('company_id', company.id)
+      const { count: activePersonas } = await supabase.from('personas').select('*', { count: 'exact', head: true }).eq('company_id', company.id).eq('status', 'active')
       const { count: pendingInvites } = await supabase.from('invitation_codes').select('*', { count: 'exact', head: true }).eq('company_id', company.id).eq('status', 'pending')
       const { data: payments } = await supabase.from('payments').select('amount').eq('company_id', company.id).eq('status', 'completed')
       const totalPaid = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
       setStats({ totalPersonas: totalPersonas || 0, activePersonas: activePersonas || 0, pendingInvites: pendingInvites || 0, totalPaid })
-      const { data: recent } = await supabase.from('company_persons').select('full_name, created_at, type').eq('company_id', company.id).order('created_at', { ascending: false }).limit(5)
+      const { data: recent } = await supabase.from('personas').select('full_name, created_at, type').eq('company_id', company.id).order('created_at', { ascending: false }).limit(5)
       setRecentActivity(recent || [])
     } catch (err) { console.error('Error loading dashboard:', err) } finally { setLoading(false) }
   }
