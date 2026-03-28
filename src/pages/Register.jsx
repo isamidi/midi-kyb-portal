@@ -20,17 +20,7 @@ export default function Register() {
     setLoading(true)
 
     try {
-      // Send OTP code to email (passwordless)
-      const { error: otpErr } = await supabase.auth.signInWithOtp({
-        email: form.email,
-        options: {
-          shouldCreateUser: true,
-          data: { company_name: form.company_name }
-        }
-      })
-      if (otpErr) throw otpErr
-
-      // Redirect to OTP verification page
+      // Test mode: skip OTP send, go directly to verify page
       navigate('/verify-email', {
         state: {
           email: form.email,
