@@ -15,7 +15,12 @@ export default function Login() {
     setLoading(true)
 
     try {
-      // Test mode: skip OTP send, go directly to verify page
+      const { error: otpErr } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false }
+      })
+      if (otpErr) throw otpErr
+
       navigate('/verify-email', {
         state: {
           email,
