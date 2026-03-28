@@ -27,7 +27,7 @@ export default function AddPersonas() {
     try {
       const subCode = genCode(company?.name)
       const tags = form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : []
-      const { error: err } = await supabase.from('company_persons').insert({
+      const { error: err } = await supabase.from('personas').insert({
         company_id: company.id, full_name: form.full_name, email: form.email, type: form.type,
         country: form.country || null, phone: form.phone || null, sub_code: subCode, tags, status: 'active'
       })
@@ -65,7 +65,7 @@ export default function AddPersonas() {
         headers.forEach((h, i) => { obj[h] = vals[i]?.trim() || '' }); return obj
       }).filter(r => r.full_name || r.email)
       const inserts = rows.map(r => ({ company_id: company.id, full_name: r.full_name || r.nombre || '', email: r.email || '', type: r.type || 'contractor', country: r.country || null, sub_code: genCode(company?.name), tags: r.tags ? r.tags.split(';').map(t => t.trim()) : [], status: 'active' }))
-      const { error: err } = await supabase.from('company_persons').insert(inserts)
+      const { error: err } = await supabase.from('personas').insert(inserts)
       if (err) throw err
       setCsvResult({ success: true, count: inserts.length }); setCsvFile(null); setCsvPreview([])
     } catch (err) { setCsvResult({ success: false, message: err.message }) } finally { setCsvUploading(false) }
