@@ -8,9 +8,9 @@ import {
 } from 'lucide-react'
 
 /*
-  KYBForm — Step 2 of KYB Process
+  KYBForm â Step 2 of KYB Process
 
-  Flow: Documents uploaded → AI extracts data → Form pre-filled → Client completes remaining fields
+  Flow: Documents uploaded â AI extracts data â Form pre-filled â Client completes remaining fields
 
   Sections:
   1. Company Info (auto-filled from governance doc)
@@ -27,7 +27,7 @@ import {
   - Can exit and return, progress persists
 */
 
-// ── Section Definitions ──────────────────────────────────────────────
+// ââ Section Definitions ââââââââââââââââââââââââââââââââââââââââââââââ
 const SECTIONS = [
   { id: 'company_info', label: 'Company Info', icon: Building2 },
   { id: 'contact_info', label: 'Contact Info', icon: Phone },
@@ -37,7 +37,7 @@ const SECTIONS = [
   { id: 'compliance', label: 'Compliance', icon: Shield },
 ]
 
-// ── Options ──────────────────────────────────────────────────────────
+// ââ Options ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const ENTITY_TYPES = [
   'Corporation (U.S. Companies)-Domestic',
   'Corporation (Non-U.S. companies)-Foreign',
@@ -90,7 +90,7 @@ const SANCTIONED_COUNTRIES = [
   'Syria', 'Donetsk People\'s Republic (DNR)', 'Myanmar (Burma)', 'Belarus',
 ]
 
-// ── Initial Form State ───────────────────────────────────────────────
+// ââ Initial Form State âââââââââââââââââââââââââââââââââââââââââââââââ
 const INITIAL_FORM = {
   // Company Info
   full_legal_name: '',
@@ -128,7 +128,7 @@ const INITIAL_FORM = {
   sanctioned_countries: [],
 }
 
-// ── Validation ───────────────────────────────────────────────────────
+// ââ Validation âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const REQUIRED_FIELDS = {
   company_info: ['full_legal_name', 'trade_name', 'entity_type', 'registration_number', 'tax_id_ein'],
   contact_info: ['entity_phone', 'entity_email', 'digital_presence'],
@@ -147,7 +147,7 @@ function isSectionComplete(sectionId, formData) {
   })
 }
 
-// ── Main Component ───────────────────────────────────────────────────
+// ââ Main Component âââââââââââââââââââââââââââââââââââââââââââââââââââ
 export default function KYBForm() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -328,10 +328,7 @@ export default function KYBForm() {
   const allComplete = SECTIONS.every(s => isSectionComplete(s.id, formData))
 
   const handleSubmit = async () => {
-    if (!allComplete) {
-      setError('Please complete all sections before submitting.')
-      return
-    }
+    // Save current progress and continue - validation happens at submit in Review
     // Final save
     await saveToDb(formData)
     navigate('/kyb/review')
@@ -346,7 +343,7 @@ export default function KYBForm() {
     )
   }
 
-  // ── Render Helpers ─────────────────────────────────────────────────
+  // ââ Render Helpers âââââââââââââââââââââââââââââââââââââââââââââââââ
   const renderField = (label, field, type = 'text', props = {}) => {
     const isAutoFilled = autoFilledFields.has(field)
     return (
@@ -462,7 +459,7 @@ export default function KYBForm() {
     </div>
   )
 
-  // ── Section Renderers ──────────────────────────────────────────────
+  // ââ Section Renderers ââââââââââââââââââââââââââââââââââââââââââââââ
   const renderCompanyInfo = () => (
     <div>
       <h3 style={{ marginBottom: 4 }}>Company Info</h3>
@@ -631,7 +628,7 @@ export default function KYBForm() {
     compliance: renderCompliance,
   }
 
-  // ── Main Render ────────────────────────────────────────────────────
+  // ââ Main Render ââââââââââââââââââââââââââââââââââââââââââââââââââââ
   return (
     <div style={{ display: 'flex', gap: 24, minHeight: '70vh' }}>
       {/* Sidebar Navigation */}
@@ -742,7 +739,7 @@ export default function KYBForm() {
               <button
                 className="btn btn-primary"
                 onClick={handleSubmit}
-                disabled={!allComplete}
+                disabled={false}
                 style={{ background: allComplete ? 'var(--midi-purple)' : undefined }}
               >
                 Review & Submit <ArrowRight size={18} />
