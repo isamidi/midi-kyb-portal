@@ -152,7 +152,7 @@ export default function KYBUpload() {
       if (fnError) throw fnError
       setExtracting(prev => ({ ...prev, [docId]: 'done' }))
       setExtractedCount(prev => prev + 1)
-      return data?.extracted_fields || {}
+      return data?.extracted_data || {}
     } catch (err) {
       console.error(`Extraction failed for ${docId}:`, err)
       setExtracting(prev => ({ ...prev, [docId]: 'error' }))
@@ -196,7 +196,7 @@ export default function KYBUpload() {
 
           if (uploadError) throw uploadError
 
-          const { data: docRecord } = await supabase
+          const { data: docRecords } = await supabase
             .from('kyb_documents')
             .insert({
               company_id: companyId,
@@ -208,7 +208,9 @@ export default function KYBUpload() {
               uploaded_by: user.id,
             })
             .select('id')
-            .single()
+            .limit(1)
+
+          const docRecord = docRecords?.[0]
 
           uploadedDocs.push({
             document_type: doc.id,
