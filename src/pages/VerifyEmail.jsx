@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { Mail, ShieldCheck, Loader, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react'
 
-const OTP_LENGTH = 6
+const OTP_LENGTH = 8
 
 export default function VerifyEmail() {
   const navigate = useNavigate()
