@@ -97,12 +97,20 @@ export default function App() {
       setUser(session?.user ?? null)
 
       if (session?.user) {
-        const { data: companyUser } = await supabase
+        // Use .limit(1) instead of .single() to avoid 406 errors
+        // when user has 0 or multiple company_users rows
+        const { data: companyUsers, error: cuError } = await supabase
           .from('company_users')
           .select('companies(*), role')
           .eq('user_id', session.user.id)
           .eq('status', 'active')
-          .single()
+          .limit(1)
+
+        const companyUser = companyUsers?.[0]
+
+        if (cuError) {
+          console.error('Error fetching company user:', cuError)
+        }
 
         if (companyUser?.companies) {
           setCompany({
@@ -110,22 +118,30 @@ export default function App() {
             name: companyUser.companies.name,
             role: companyUser.role,
           })
+
           setKybData(prev => ({
             ...prev,
             companyId: companyUser.companies.id,
           }))
 
-          const { data: app } = await supabase
+          // Use .limit(1) instead of .single() for kyb_applications too
+          const { data: apps, error: appError } = await supabase
             .from('kyb_applications')
             .select('status')
             .eq('company_id', companyUser.companies.id)
-            .single()
+            .limit(1)
 
+          if (appError) {
+            console.error('Error fetching application:', appError)
+          }
+
+          const app = apps?.[0]
           if (app) {
             setApplicationStatus(app.status)
           }
         }
       }
+
       setLoading(false)
     })
 
@@ -215,11 +231,14 @@ export default function App() {
           </Route>
 
           {/* Catch-all */}
-          <Route path="*" element={
-            <ProtectedRoute>
-              <Navigate to={getDefaultRoute()} replace />
-            </ProtectedRoute>
-          } />
+          <Route
+            path="*"
+            element={
+              <ProtectedRoute>
+                <Navigate to={getDefaultRoute()} replace />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </KYBContext.Provider>
     </AuthContext.Provider>
