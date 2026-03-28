@@ -73,65 +73,46 @@ export default function VerifyEmail() {
     setError(null)
 
     try {
-      if (mode === 'login') {
-        // Test mode: use password auth instead of OTP
-        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-          email,
-          password: token,
-        })
-        if (signInErr) throw signInErr
-      } else {
-        // Test mode: register with password
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-          email,
-          password: token,
-          options: { data: { company_name: companyName } }
-        })
-        if (signUpErr) {
-          if (signUpErr.message?.includes('already registered')) {
-            const { data: fallbackData, error: fallbackErr } = await supabase.auth.signInWithPassword({
-              email,
-              password: token,
-            })
-            if (fallbackErr) throw fallbackErr
-          } else {
-            throw signUpErr
-          }
-        }
-      }
+      const { data, error: verifyErr } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: mode === 'login' ? 'email' : 'email'
+      })
+      if (verifyErr) throw verifyErr
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('No se pudo obtener el usuario')
+      // Check company_users
+      const userId = data.user?.id || data.session?.user?.id
+      if (!userId) throw new Error('No se pudo obtener el usuario')
 
-      const { data: cu } = await supabase
+      const { data: companyUser } = await supabase
         .from('company_users')
-        .select('company_id')
-        .eq('user_id', user.id)
+        .select('company_id, role')
+        .eq('user_id', userId)
         .maybeSingle()
 
-      if (cu?.company_id) {
-        const { data: app } = await supabase
+      if (companyUser) {
+        const { data: kybApp } = await supabase
           .from('kyb_applications')
           .select('status')
-          .eq('company_id', cu.company_id)
+          .eq('company_id', companyUser.company_id)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle()
-        const st = app?.status
-        if (st === 'contract_signed' || st === 'approved') {
+
+        if (kybApp && ['submitted', 'approved', 'in_review'].includes(kybApp.status)) {
           navigate('/portal')
-        } else if (st) {
-          navigate('/kyb', { state: { resuming: true } })
         } else {
-          navigate('/kyb')
+          navigate('/kyb/upload')
         }
       } else {
-        navigate('/kyb')
+        navigate('/kyb/upload')
       }
     } catch (err) {
       const msg = err.message || ''
-      if (msg.includes('Invalid login credentials')) {
-        setError('Codigo incorrecto. Usa el codigo de prueba: 00000000')
+      if (msg.includes('Token has expired') || msg.includes('otp_expired')) {
+        setError('El codigo ha expirado. Solicita uno nuevo.')
+      } else if (msg.includes('Invalid') || msg.includes('invalid')) {
+        setError('Codigo incorrecto. Revisa tu email e intenta de nuevo.')
       } else {
         setError(msg)
       }
@@ -142,10 +123,23 @@ export default function VerifyEmail() {
 
   const handleResend = async () => {
     setResending(true)
-    setResent(true)
-    setError('Modo prueba: usa el codigo 00000000')
-    setResending(false)
-    setTimeout(() => setResent(false), 5000)
+    setError(null)
+    try {
+      const { error: resendErr } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: mode !== 'login',
+          ...(companyName ? { data: { company_name: companyName } } : {})
+        }
+      })
+      if (resendErr) throw resendErr
+      setResent(true)
+      setTimeout(() => setResent(false), 5000)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setResending(false)
+    }
   }
 
   useEffect(() => {
