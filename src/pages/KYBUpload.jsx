@@ -5,11 +5,11 @@ import { supabase } from '../lib/supabaseClient'
 import { Upload, FileText, X, ArrowRight, Info, CheckCircle, Sparkles, Loader2, Plus } from 'lucide-react'
 
 /*
-  KYB Document Upload â Step 1
+  KYB Document Upload Ã¢ÂÂ Step 1
   Matches Jotform structure:
   1. Company Governance (Operating Agreement, Bylaws, etc.)
   2. Organization Chart (ownership & control structure)
-  3. Identification (IDs for UBOs 10%+, CEO, CFO, authorized reps) â multiple files
+  3. Identification (IDs for UBOs 10%+, CEO, CFO, authorized reps) Ã¢ÂÂ multiple files
   4. Bank Statement (most recent full calendar month)
 */
 
@@ -141,7 +141,7 @@ export default function KYBUpload() {
   const extractDocument = async (docId, filePath, documentId) => {
     setExtracting(prev => ({ ...prev, [docId]: 'pending' }))
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('extract-document', {
+      const extractPromise = supabase.functions.invoke('extract-document', {
         body: {
           file_path: filePath,
           document_type: docId,
@@ -149,6 +149,11 @@ export default function KYBUpload() {
           document_id: documentId,
         },
       })
+      // Timeout after 30s to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Extraction timeout')), 30000)
+      )
+      const { data, error: fnError } = await Promise.race([extractPromise, timeoutPromise])
       if (fnError) throw fnError
       setExtracting(prev => ({ ...prev, [docId]: 'done' }))
       setExtractedCount(prev => prev + 1)
@@ -233,7 +238,12 @@ export default function KYBUpload() {
       }))
 
       setUploading(false)
-      await Promise.allSettled(extractionPromises)
+      // Wait for extractions but with a 15s max timeout to not block the flow
+      const maxWait = new Promise(resolve => setTimeout(resolve, 15000))
+      await Promise.race([
+        Promise.allSettled(extractionPromises),
+        maxWait
+      ])
       setTimeout(() => navigate('/kyb/form'), 800)
     } catch (err) {
       setError(err.message || 'Error uploading documents. Please try again.')
