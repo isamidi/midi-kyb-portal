@@ -19,6 +19,8 @@ const PipelineKYB = () => {
   const [stageHistory, setStageHistory] = useState({});
   const [activityLog, setActivityLog] = useState({});
   const [adminUsers, setAdminUsers] = useState({});
+  const [contracts, setContracts] = useState({});
+  const [personDetails, setPersonDetails] = useState({});
 
   // Stages definition
   const stages = [
@@ -115,6 +117,8 @@ const PipelineKYB = () => {
       fetchSolicitudesAndPersonas(data || []);
       fetchStageHistory(data || []);
       fetchActivityLog(data || []);
+      fetchContracts(data || []);
+      fetchPersonDetails(data || []);
     } catch (err) {
       console.error('Error fetching companies:', err);
     } finally {
@@ -203,6 +207,34 @@ const PipelineKYB = () => {
       setActivityLog(logMap);
     } catch (err) {
       console.error('Error fetching activity log:', err);
+    }
+  };
+
+  const fetchContracts = async (companiesList) => {
+    try {
+      const { data, error } = await supabase.from('signed_contracts').select('*');
+      if (error) throw error;
+      const contractMap = {};
+      companiesList.forEach((c) => {
+        contractMap[c.id] = data?.find((sc) => sc.company_id === c.id) || null;
+      });
+      setContracts(contractMap);
+    } catch (err) {
+      console.error('Error fetching contracts:', err);
+    }
+  };
+
+  const fetchPersonDetails = async (companiesList) => {
+    try {
+      const { data, error } = await supabase.from('personas').select('*');
+      if (error) throw error;
+      const detailMap = {};
+      companiesList.forEach((c) => {
+        detailMap[c.id] = data?.filter((p) => p.company_id === c.id) || [];
+      });
+      setPersonDetails(detailMap);
+    } catch (err) {
+      console.error('Error fetching person details:', err);
     }
   };
 
@@ -412,7 +444,7 @@ const PipelineKYB = () => {
                   {personas[company.id]?.total || 0}
                 </span>
                 <span style={{ color: getDayColor(getDaysDifference(company.stage_entered_at)) }}>
-                  {getDaysDifference(company.stage_entered_at)} dÃ­as
+                  {getDaysDifference(company.stage_entered_at)} dÃÂ­as
                 </span>
               </div>
               <div style={styles.actions}>
@@ -453,12 +485,12 @@ const PipelineKYB = () => {
             onClick={() => setShowDetailPanel(false)}
             style={styles.closeButton}
           >
-            â
+            Ã¢ÂÂ
           </button>
           <div>
             <h2 style={styles.detailCompanyName}>{selectedCompany.name}</h2>
             <div style={styles.detailSection}>
-              <h3>InformaciÃ³n General</h3>
+              <h3>InformaciÃÂ³n General</h3>
               <p>Email: {selectedCompany.contact_email}</p>
               <p>Etapa: {getStageName(selectedCompany.stage)}</p>
               <p>
@@ -484,8 +516,34 @@ const PipelineKYB = () => {
                 {personas[selectedCompany.id]?.total || 0})
               </h3>
               <p>
-                {personas[selectedCompany.id]?.total || 0} personas registradas
+                {personDetails[selectedCompany.id]?.length || 0} personas registradas
               </p>
+              {personDetails[selectedCompany.id]?.map((p, idx) => (
+                <div key={idx} style={{ padding: '8px 0', borderTop: idx > 0 ? '1px solid #f0f0f0' : 'none', fontSize: '14px' }}>
+                  <strong>{p.full_name || p.name || 'Sin nombre'}</strong>
+                  <br />
+                  <span style={{ color: '#666' }}>{p.email || ''}</span>
+                  {p.activated_at && <span style={{ color: '#4caf50', marginLeft: 8, fontSize: '12px' }}>Activado</span>}
+                </div>
+              ))}
+            </div>
+
+            {/* Contrato section */}
+            <div style={styles.detailSection}>
+              <h3>Contrato</h3>
+              {contracts[selectedCompany.id] ? (
+                <div>
+                  <p style={{ color: '#4caf50', fontWeight: 600 }}>Firmado</p>
+                  <p style={{ fontSize: '14px', color: '#666' }}>
+                    Firmante: {contracts[selectedCompany.id].signer_name}
+                  </p>
+                  <p style={{ fontSize: '14px', color: '#666' }}>
+                    Fecha: {contracts[selectedCompany.id].signed_at ? new Date(contracts[selectedCompany.id].signed_at).toLocaleDateString() : 'N/A'}
+                  </p>
+                </div>
+              ) : (
+                <p style={{ color: '#999' }}>No firmado</p>
+              )}
             </div>
 
             {/* Timeline section */}
@@ -496,7 +554,7 @@ const PipelineKYB = () => {
                   {stageHistory[selectedCompany.id]?.map((entry, idx) => (
                     <div key={idx} style={styles.timelineItem}>
                       <span style={styles.timelineDate}>
-                        {new Date(entry.entered_at).toLocaleDateString()}
+                        {entry.entered_at ? new Date(entry.entered_at).toLocaleDateString() : 'N/A'}
                       </span>
                       <span style={styles.timelineStage}>
                         {getStageName(entry.stage)}
@@ -570,7 +628,7 @@ const PipelineKYB = () => {
                 style={styles.modalInput}
               />
               <select name="category" required style={styles.modalInput}>
-                <option value="">Seleccionar categorÃ­a</option>
+                <option value="">Seleccionar categorÃÂ­a</option>
                 <option value="fintech">FinTech</option>
                 <option value="ecommerce">E-commerce</option>
                 <option value="tech">Tech</option>
