@@ -54,7 +54,7 @@ const SECTION_FIELDS = {
 const REQUIRED_DOCS = [
   { type: 'company_governance', label: 'Company Governance Document' },
   { type: 'organization_chart', label: 'Organization Chart' },
-  { type: 'identification', label: 'Identification Document' },
+  { type: 'id_documents', label: 'Identification Document' },
   { type: 'bank_statement', label: 'Bank Statement' },
 ]
 
