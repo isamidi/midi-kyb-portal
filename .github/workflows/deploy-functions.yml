@@ -1,0 +1,22 @@
+name: Deploy Edge Functions
+on:
+  workflow_dispatch:
+    inputs:
+      supabase_token:
+        description: 'Supabase access token'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      - run: supabase functions deploy extract-document --project-ref enklmqdmuyxtczusmjtv
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ inputs.supabase_token }}
