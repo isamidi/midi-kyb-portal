@@ -10,40 +10,58 @@ const corsHeaders = {
 }
 
 // Field extraction prompts per document type
+// Keys MUST match the document_type values sent from KYBUpload.jsx:
+// company_governance, organization_chart, id_documents, bank_statement
 const EXTRACTION_PROMPTS: Record<string, string> = {
-  corporate_document: `Extract the following fields from this corporate document (Operating Agreement, Bylaws, Articles of Incorporation, or Partnership Agreement). Return ONLY a JSON object with these fields:
+  company_governance: `Extract the following fields from this corporate governance document (Operating Agreement, Bylaws, Articles of Incorporation, Partnership Agreement, or Articles of Association).
+Return ONLY a JSON object with these fields:
 {
   "entity_name": "Full legal name of the company",
-  "type_of_company": "LLC, Corporation, Partnership, etc.",
+  "trade_name": "Trade name or DBA if different from legal name, otherwise same as entity_name",
+  "type_of_company": "LLC, Corporation, Partnership, Limited Liability Company, etc.",
   "country_of_registration": "Country where registered",
   "state_of_registration": "State/Province if applicable",
   "registration_number": "Registration or filing number",
+  "tin_ein": "Tax ID or EIN if shown",
   "registration_date": "Date of registration (YYYY-MM-DD)",
-  "registered_address": "Registered address of the company",
+  "entity_address": "Registered address of the company",
   "beneficial_owners": [
     {
       "name": "Full name",
       "title": "Title/Position",
       "ownership_percentage": "Percentage as number",
-      "is_control_person": true/false
+      "is_control_person": true
     }
   ],
   "authorized_signatories": ["Name 1", "Name 2"]
 }
 If a field cannot be found, use null. For arrays, return empty array if not found.`,
 
-  ein_tax_id: `Extract the following fields from this EIN/Tax ID document (IRS Letter CP575, SS-4 Confirmation, or similar tax identification document). Return ONLY a JSON object:
+  organization_chart: `Extract the following fields from this organization chart or ownership structure document.
+Return ONLY a JSON object with these fields:
 {
-  "entity_name": "Full legal name as registered with IRS",
-  "tin_ein": "EIN or Tax ID number (XX-XXXXXXX format)",
-  "entity_type": "Type of entity (LLC, Corporation, etc.)",
-  "tax_year_end": "Fiscal year end month if shown",
-  "responsible_party": "Name of responsible party if shown",
-  "address": "Address shown on document"
+  "entity_name": "Name of the main/parent company",
+  "beneficial_owners": [
+    {
+      "name": "Full name of owner/shareholder",
+      "title": "Title/Position",
+      "ownership_percentage": "Percentage as number",
+      "is_control_person": true
+    }
+  ],
+  "subsidiaries": [
+    {
+      "name": "Subsidiary name",
+      "ownership_percentage": "Percentage owned",
+      "country": "Country of incorporation"
+    }
+  ],
+  "control_persons": ["Name of person with significant control"]
 }
-If a field cannot be found, use null.`,
+If a field cannot be found, use null. For arrays, return empty array if not found.`,
 
-  id_representative: `Extract the following fields from this government-issued photo ID (passport, driver's license, national ID). Return ONLY a JSON object:
+  id_documents: `Extract the following fields from this government-issued photo ID (passport, driver's license, national ID).
+Return ONLY a JSON object:
 {
   "full_name": "Full legal name as shown on ID",
   "first_name": "First name",
@@ -58,7 +76,8 @@ If a field cannot be found, use null.`,
 }
 If a field cannot be found, use null.`,
 
-  bank_statement: `Extract the following fields from this bank statement. Return ONLY a JSON object:
+  bank_statement: `Extract the following fields from this bank statement.
+Return ONLY a JSON object:
 {
   "bank_name": "Name of the bank",
   "account_holder_name": "Name on the account",
@@ -68,23 +87,10 @@ If a field cannot be found, use null.`,
   "account_type": "checking, savings, etc.",
   "statement_date": "Statement date (YYYY-MM-DD)",
   "currency": "Currency of the account (USD, EUR, etc.)",
-  "bank_address": "Bank branch address if shown"
+  "bank_address": "Bank branch address if shown",
+  "entity_address": "Account holder address if shown"
 }
 If a field cannot be found, use null. NEVER return the full account number, only last 4 digits.`,
-
-  proof_of_address: `Extract the following fields from this proof of address document (utility bill, bank letter, government letter). Return ONLY a JSON object:
-{
-  "entity_or_person_name": "Name of person or entity on document",
-  "address_line1": "Street address line 1",
-  "address_line2": "Apt/Suite/Unit if applicable",
-  "city": "City",
-  "state": "State/Province",
-  "zip_code": "ZIP/Postal code",
-  "country": "Country",
-  "document_date": "Date of document (YYYY-MM-DD)",
-  "issuer": "Who issued the document (utility company, bank, etc.)"
-}
-If a field cannot be found, use null.`,
 }
 
 serve(async (req: Request) => {
@@ -139,8 +145,8 @@ serve(async (req: Request) => {
     else if (extension === 'png') mediaType = 'image/png'
     else if (extension === 'webp') mediaType = 'image/webp'
 
-    // Get extraction prompt
-    const extractionPrompt = EXTRACTION_PROMPTS[document_type] || EXTRACTION_PROMPTS['corporate_document']
+    // Get extraction prompt - fall back to company_governance if unknown type
+    const extractionPrompt = EXTRACTION_PROMPTS[document_type] || EXTRACTION_PROMPTS['company_governance']
 
     // Call Claude API
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
@@ -233,7 +239,6 @@ serve(async (req: Request) => {
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-
   } catch (error) {
     return new Response(
       JSON.stringify({ error: 'Internal error', details: (error as Error).message }),
