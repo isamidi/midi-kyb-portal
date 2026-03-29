@@ -1,8 +1,7 @@
 // Midi KYB Portal - Document Extraction Edge Function
 // Uses Claude API to extract structured data from uploaded documents
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -78,7 +77,7 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary)
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
