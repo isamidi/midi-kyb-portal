@@ -236,6 +236,17 @@ const PipelineKYB = () => {
     return companies.filter((c) => c.stage === stage).length;
   };
 
+  // Stage to KYB application status mapping
+  const stageToStatusMap = {
+    registro: 'submitted',
+    documentos: 'submitted',
+    compliance_midi: 'midi_review',
+    compliance_banco: 'bank_review',
+    contrato: 'approved',
+    activacion: 'approved',
+    activo: 'approved',
+  };
+
   const handleChangeStage = async (companyId, newStage) => {
     try {
       const { error } = await supabase
@@ -244,6 +255,15 @@ const PipelineKYB = () => {
         .eq('id', companyId);
 
       if (error) throw error;
+
+      // Sync kyb_applications status
+      const newStatus = stageToStatusMap[newStage];
+      if (newStatus) {
+        await supabase
+          .from('kyb_applications')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('company_id', companyId);
+      }
 
       // Log activity
       await supabase.from('activity_log').insert([
@@ -392,7 +412,7 @@ const PipelineKYB = () => {
                   {personas[company.id]?.total || 0}
                 </span>
                 <span style={{ color: getDayColor(getDaysDifference(company.stage_entered_at)) }}>
-                  {getDaysDifference(company.stage_entered_at)} días
+                  {getDaysDifference(company.stage_entered_at)} dÃ­as
                 </span>
               </div>
               <div style={styles.actions}>
@@ -433,12 +453,12 @@ const PipelineKYB = () => {
             onClick={() => setShowDetailPanel(false)}
             style={styles.closeButton}
           >
-            ✕
+            â
           </button>
           <div>
             <h2 style={styles.detailCompanyName}>{selectedCompany.name}</h2>
             <div style={styles.detailSection}>
-              <h3>Información General</h3>
+              <h3>InformaciÃ³n General</h3>
               <p>Email: {selectedCompany.contact_email}</p>
               <p>Etapa: {getStageName(selectedCompany.stage)}</p>
               <p>
@@ -550,7 +570,7 @@ const PipelineKYB = () => {
                 style={styles.modalInput}
               />
               <select name="category" required style={styles.modalInput}>
-                <option value="">Seleccionar categoría</option>
+                <option value="">Seleccionar categorÃ­a</option>
                 <option value="fintech">FinTech</option>
                 <option value="ecommerce">E-commerce</option>
                 <option value="tech">Tech</option>
