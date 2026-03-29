@@ -130,9 +130,14 @@ export default function ContractSign() {
         .from('signed_contracts')
         .insert({
           company_id: company.id,
+          company_name: company.name || 'Empresa',
+          application_id: kybData?.applicationId || null,
+          signer_name: user.user_metadata?.full_name || user.email,
+          signer_title: 'Representante Legal',
           signed_by: user.id,
           signature_data: sigData,
           signed_at: new Date().toISOString(),
+          contract_version: '1.0',
         })
 
       if (insertErr) throw insertErr
