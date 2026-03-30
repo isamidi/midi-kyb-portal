@@ -9,16 +9,16 @@ import {
 
 const STATUS_CONFIG = {
   submitted: {
-    label: 'Aplicación Enviada',
-    description: 'Tu aplicación ha sido recibida. Nuestro equipo la revisará pronto.',
+    label: 'AplicaciÃ³n Enviada',
+    description: 'Tu aplicaciÃ³n ha sido recibida. Nuestro equipo la revisarÃ¡ pronto.',
     icon: Clock,
     color: '#825DC7',
     bg: 'rgba(130, 93, 199, 0.08)',
     step: 1,
   },
   midi_review: {
-    label: 'En Revisión por Midi',
-    description: 'Nuestro equipo de compliance está revisando tu documentación.',
+    label: 'En RevisiÃ³n por Midi',
+    description: 'Nuestro equipo de compliance estÃ¡ revisando tu documentaciÃ³n.',
     icon: FileSearch,
     color: '#825DC7',
     bg: 'rgba(130, 93, 199, 0.08)',
@@ -26,15 +26,15 @@ const STATUS_CONFIG = {
   },
   documents_missing: {
     label: 'Documentos Faltantes',
-    description: 'Necesitamos documentos adicionales para continuar con tu verificación.',
+    description: 'Necesitamos documentos adicionales para continuar con tu verificaciÃ³n.',
     icon: AlertCircle,
     color: '#e74c3c',
     bg: 'rgba(231, 76, 60, 0.06)',
     step: 2,
   },
   bank_review: {
-    label: 'En Aprobación del Banco',
-    description: 'Tu documentación fue aprobada por Midi. Ahora está en revisión por Banco San Juan Internacional.',
+    label: 'En AprobaciÃ³n del Banco',
+    description: 'Tu documentaciÃ³n fue aprobada por Midi. Ahora estÃ¡ en revisiÃ³n por Banco San Juan Internacional.',
     icon: Building2,
     color: '#F5812B',
     bg: 'rgba(245, 129, 43, 0.08)',
@@ -50,7 +50,7 @@ const STATUS_CONFIG = {
   },
   rejected: {
     label: 'No Aprobado',
-    description: 'Lamentablemente tu aplicación no fue aprobada en este momento. Contáctanos para más detalles.',
+    description: 'Lamentablemente tu aplicaciÃ³n no fue aprobada en este momento. ContÃ¡ctanos para mÃ¡s detalles.',
     icon: AlertCircle,
     color: '#e74c3c',
     bg: 'rgba(231, 76, 60, 0.06)',
@@ -60,8 +60,8 @@ const STATUS_CONFIG = {
 
 const TIMELINE_STEPS = [
   { key: 'submitted', label: 'Enviada', icon: CheckCircle },
-  { key: 'midi_review', label: 'Revisión Midi', icon: FileSearch },
-  { key: 'bank_review', label: 'Aprobación Banco', icon: Building2 },
+  { key: 'midi_review', label: 'RevisiÃ³n Midi', icon: FileSearch },
+  { key: 'bank_review', label: 'AprobaciÃ³n Banco', icon: Building2 },
   { key: 'approved', label: 'Aprobado', icon: PartyPopper },
 ]
 
@@ -80,6 +80,17 @@ export default function StatusDashboard() {
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const fileInputRefs = useRef({})
+
+  // Redirect to portal for submitted/active statuses (early access flow)
+  useEffect(() => {
+    if (!loading && application) {
+      const portalStatuses = ['submitted', 'in_review', 'approved', 'contract_signed']
+      if (portalStatuses.includes(application.status)) {
+        navigate('/portal', { replace: true })
+        return
+      }
+    }
+  }, [loading, application, navigate])
 
   const fetchApplication = async () => {
     setLoading(true)
@@ -146,7 +157,7 @@ export default function StatusDashboard() {
     const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
 
     if (file.size > maxSize) {
-      setUploadError(`${file.name} es demasiado grande. Máximo 10MB.`)
+      setUploadError(`${file.name} es demasiado grande. MÃ¡ximo 10MB.`)
       return
     }
     if (!allowed.includes(file.type)) {
@@ -214,7 +225,7 @@ export default function StatusDashboard() {
       await supabase.from('application_status_log').insert({
         application_id: application.id,
         status: 'midi_review',
-        message: `Documentos adicionales enviados (${uploaded.length}). Vuelve a revisión.`,
+        message: `Documentos adicionales enviados (${uploaded.length}). Vuelve a revisiÃ³n.`,
       })
 
       setUploadSuccess(true)
@@ -247,10 +258,10 @@ export default function StatusDashboard() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <h2 style={{ marginBottom: 4 }}>
-            Estado de tu <span className="text-purple">aplicación</span>
+            Estado de tu <span className="text-purple">aplicaciÃ³n</span>
           </h2>
           <p className="text-muted" style={{ fontSize: '0.9rem' }}>
-            Seguimiento en tiempo real de tu proceso de verificación
+            Seguimiento en tiempo real de tu proceso de verificaciÃ³n
           </p>
         </div>
         <button onClick={fetchApplication} className="btn btn-sm btn-secondary">
@@ -342,7 +353,7 @@ export default function StatusDashboard() {
         </div>
       )}
 
-      {/* ============ MISSING DOCUMENTS — Re-upload Section ============ */}
+      {/* ============ MISSING DOCUMENTS â Re-upload Section ============ */}
       {status === 'documents_missing' && !uploadSuccess && (
         <div className="card" style={{
           padding: '28px',
@@ -355,7 +366,7 @@ export default function StatusDashboard() {
           </div>
 
           <p className="text-muted" style={{ fontSize: '0.88rem', marginBottom: 20, lineHeight: 1.5 }}>
-            Sube los documentos solicitados abajo. Una vez que los envíes, tu aplicación volverá a revisión automáticamente.
+            Sube los documentos solicitados abajo. Una vez que los envÃ­es, tu aplicaciÃ³n volverÃ¡ a revisiÃ³n automÃ¡ticamente.
           </p>
 
           {/* List of requested documents with upload */}
@@ -380,7 +391,7 @@ export default function StatusDashboard() {
                         display: 'flex', alignItems: 'center', gap: 6,
                       }}>
                         {hasFile && <CheckCircle size={14} color="#5a6000" />}
-                        {!hasFile && <span style={{ color: '#e74c3c', fontSize: '0.8rem' }}>●</span>}
+                        {!hasFile && <span style={{ color: '#e74c3c', fontSize: '0.8rem' }}>â</span>}
                         {docLabel}
                       </div>
                       {docHint && <div style={{ fontSize: '0.78rem', color: '#888' }}>{docHint}</div>}
@@ -453,7 +464,7 @@ export default function StatusDashboard() {
           >
             <p style={{ fontSize: '0.85rem', color: '#888' }}>
               <Upload size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-              ¿Tienes documentos adicionales? Súbelos aquí
+              Â¿Tienes documentos adicionales? SÃºbelos aquÃ­
             </p>
           </div>
 
@@ -511,12 +522,12 @@ export default function StatusDashboard() {
           <CheckCircle size={32} color="#5a6000" style={{ marginBottom: 8 }} />
           <p style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 4 }}>Documentos enviados</p>
           <p className="text-muted" style={{ fontSize: '0.88rem' }}>
-            Tu aplicación volvió a revisión. Te notificaremos cuando haya novedades.
+            Tu aplicaciÃ³n volviÃ³ a revisiÃ³n. Te notificaremos cuando haya novedades.
           </p>
         </div>
       )}
 
-      {/* Approved CTA — Go to Contract */}
+      {/* Approved CTA â Go to Contract */}
       {status === 'approved' && (
         <div className="card" style={{
           padding: '32px', textAlign: 'center',
