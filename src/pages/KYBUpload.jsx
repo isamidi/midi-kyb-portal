@@ -5,11 +5,12 @@ import { supabase } from '../lib/supabaseClient'
 import { Upload, FileText, X, ArrowRight, Info, CheckCircle, Sparkles, Loader2, Plus } from 'lucide-react'
 
 /*
-  KYB Document Upload Ã¢ÂÂ Step 1
+  KYB Document Upload — Step 1
+
   Matches Jotform structure:
   1. Company Governance (Operating Agreement, Bylaws, etc.)
   2. Organization Chart (ownership & control structure)
-  3. Identification (IDs for UBOs 10%+, CEO, CFO, authorized reps) Ã¢ÂÂ multiple files
+  3. Identification (IDs for UBOs 10%+, CEO, CFO, authorized reps) — multiple files
   4. Bank Statement (most recent full calendar month)
 */
 
@@ -49,6 +50,7 @@ export default function KYBUpload() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { kybData, setKybData, companyId } = useKYB()
+
   const [files, setFiles] = useState({}) // { docId: File | File[] }
   const [uploading, setUploading] = useState(false)
   const [extracting, setExtracting] = useState({})
@@ -56,14 +58,22 @@ export default function KYBUpload() {
   const [error, setError] = useState('')
   const fileInputRefs = useRef({})
 
+  // Keep a ref to companyId so async functions always see the latest value
+  const companyIdRef = useRef(companyId)
+  useEffect(() => {
+    companyIdRef.current = companyId
+  }, [companyId])
+
   // Load existing uploaded documents if returning to this step
   useEffect(() => {
     if (!companyId) return
+
     const loadExisting = async () => {
       const { data } = await supabase
         .from('kyb_documents')
         .select('*')
         .eq('company_id', companyId)
+
       if (data && data.length > 0) {
         // Mark existing docs as uploaded
         const existing = {}
@@ -138,26 +148,61 @@ export default function KYBUpload() {
   const requiredUploaded = REQUIRED_DOCS.filter(d => d.required && hasFile(d.id)).length
   const canContinue = requiredUploaded === requiredCount
 
-  const extractDocument = async (docId, filePath, documentId) => {
+  // Helper: wait for companyId to become available (handles race condition after OTP verification)
+  const waitForCompanyId = async (maxWaitMs = 8000) => {
+    if (companyIdRef.current) return companyIdRef.current
+
+    const pollInterval = 300
+    const maxAttempts = Math.ceil(maxWaitMs / pollInterval)
+
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval))
+      if (companyIdRef.current) return companyIdRef.current
+    }
+
+    // Last resort: try fetching company directly from the database
+    if (user?.id) {
+      const { data: companyUsers } = await supabase
+        .from('company_users')
+        .select('company_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .limit(1)
+
+      if (companyUsers?.[0]?.company_id) {
+        return companyUsers[0].company_id
+      }
+    }
+
+    return null
+  }
+
+  const extractDocument = async (resolvedCompanyId, docId, filePath, documentId) => {
     setExtracting(prev => ({ ...prev, [docId]: 'pending' }))
+
     try {
       const extractPromise = supabase.functions.invoke('extract-document', {
         body: {
           file_path: filePath,
           document_type: docId,
-          company_id: companyId,
+          company_id: resolvedCompanyId,
           document_id: documentId,
         },
       })
+
       // Timeout after 30s to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Extraction timeout')), 30000)
       )
+
       const { data, error: fnError } = await Promise.race([extractPromise, timeoutPromise])
+
       if (fnError) throw fnError
+
       setExtracting(prev => ({ ...prev, [docId]: 'done' }))
       setExtractedCount(prev => prev + 1)
       return data?.extracted_data || {}
+
     } catch (err) {
       console.error(`Extraction failed for ${docId}:`, err)
       setExtracting(prev => ({ ...prev, [docId]: 'error' }))
@@ -167,16 +212,24 @@ export default function KYBUpload() {
 
   const handleContinue = async () => {
     // Navigation is always allowed - validation happens at submit in Review
-
     setUploading(true)
     setError('')
 
     try {
+      // Wait for companyId if it's not yet available (race condition after OTP)
+      const resolvedCompanyId = await waitForCompanyId()
+
+      if (!resolvedCompanyId) {
+        throw new Error('Company data is still loading. Please wait a moment and try again.')
+      }
+
       const uploadedDocs = []
       const extractionPromises = []
 
       for (const doc of REQUIRED_DOCS) {
-        const docFiles = doc.multiple ? (files[doc.id] || []) : (files[doc.id] ? [files[doc.id]] : [])
+        const docFiles = doc.multiple
+          ? (files[doc.id] || [])
+          : (files[doc.id] ? [files[doc.id]] : [])
 
         for (const file of docFiles) {
           // Skip already-uploaded files
@@ -190,7 +243,7 @@ export default function KYBUpload() {
           }
 
           const ext = file.name.split('.').pop()
-          const filePath = `${companyId}/${doc.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${ext}`
+          const filePath = `${resolvedCompanyId}/${doc.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.${ext}`
 
           const { data, error: uploadError } = await supabase.storage
             .from('kyb-documents')
@@ -198,10 +251,10 @@ export default function KYBUpload() {
 
           if (uploadError) throw uploadError
 
-          const { data: docRecords } = await supabase
+          const { data: docRecords, error: insertError } = await supabase
             .from('kyb_documents')
             .insert({
-              company_id: companyId,
+              company_id: resolvedCompanyId,
               document_type: doc.id,
               file_path: data.path,
               file_name: file.name,
@@ -211,6 +264,10 @@ export default function KYBUpload() {
             })
             .select('id')
             .limit(1)
+
+          if (insertError) {
+            console.error('Failed to insert kyb_document:', insertError)
+          }
 
           const docRecord = docRecords?.[0]
 
@@ -222,7 +279,7 @@ export default function KYBUpload() {
           })
 
           extractionPromises.push(
-            extractDocument(doc.id, data.path, docRecord?.id)
+            extractDocument(resolvedCompanyId, doc.id, data.path, docRecord?.id)
           )
         }
       }
@@ -230,7 +287,7 @@ export default function KYBUpload() {
       await supabase
         .from('kyb_applications')
         .update({ documents: uploadedDocs })
-        .eq('company_id', companyId)
+        .eq('company_id', resolvedCompanyId)
 
       setKybData(prev => ({
         ...prev,
@@ -238,17 +295,30 @@ export default function KYBUpload() {
       }))
 
       setUploading(false)
+
       // Wait for extractions but with a 15s max timeout to not block the flow
       const maxWait = new Promise(resolve => setTimeout(resolve, 15000))
       await Promise.race([
         Promise.allSettled(extractionPromises),
         maxWait
       ])
+
       setTimeout(() => navigate('/kyb/form'), 800)
+
     } catch (err) {
       setError(err.message || 'Error uploading documents. Please try again.')
       setUploading(false)
     }
+  }
+
+  // Show loading state while company data is loading
+  if (!companyId) {
+    return (
+      <div className="animate-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300, gap: 16 }}>
+        <div className="spinner spinner-purple" style={{ width: 32, height: 32 }} />
+        <p className="text-muted">Loading company data...</p>
+      </div>
+    )
   }
 
   return (
@@ -343,13 +413,15 @@ export default function KYBUpload() {
           {requiredUploaded} of {requiredCount} required
         </span>
         <div style={{ width: 120, height: 6, background: '#eee', borderRadius: 3 }}>
-          <div style={{
-            width: `${(requiredUploaded / requiredCount) * 100}%`,
-            height: '100%',
-            background: canContinue ? 'var(--midi-lime)' : 'var(--midi-purple)',
-            borderRadius: 3,
-            transition: 'width 0.3s',
-          }} />
+          <div
+            style={{
+              width: `${(requiredUploaded / requiredCount) * 100}%`,
+              height: '100%',
+              background: canContinue ? 'var(--midi-lime)' : 'var(--midi-purple)',
+              borderRadius: 3,
+              transition: 'width 0.3s',
+            }}
+          />
         </div>
       </div>
 
