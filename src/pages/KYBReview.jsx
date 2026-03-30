@@ -143,7 +143,7 @@ export default function KYBReview() {
       })
       setApplicationStatus('submitted')
       setSubmitted(true)
-      setTimeout(() => navigate('/kyb/status'), 2000)
+      setTimeout(() => navigate('/portal'), 2000)
     } catch (err) {
       setError(err.message || 'Error submitting application. Please try again.')
       setSubmitting(false)
