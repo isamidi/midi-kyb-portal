@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { useAuth } from '../App'
-import { supabase } from '../lib/supabaseClient'
+import { useAuth } from '../../App'
+import { supabase } from '../../lib/supabaseClient'
 import { CreditCard, Clock, Check, AlertCircle, RefreshCw, Zap, Search, Lock } from 'lucide-react'
 
 export default function Payments() {
