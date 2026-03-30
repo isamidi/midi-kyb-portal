@@ -5,6 +5,7 @@ import {
   LayoutDashboard, Users, UserPlus, Link2, CreditCard,
   History, Settings, LogOut, Menu, X, ChevronRight
 } from 'lucide-react'
+import KYBProgressBanner from './KYBProgressBanner'
 
 const NAV_ITEMS = [
   { path: '/portal', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -104,7 +105,7 @@ export default function PortalLayout() {
             style={{ color: 'rgba(255,255,255,0.6)' }}
           >
             <LogOut size={16} />
-            <span>Cerrar sesion</span>
+            <span>Cerrar sesión</span>
           </button>
         </div>
       </aside>
@@ -122,6 +123,7 @@ export default function PortalLayout() {
           <div style={{ width: 32 }} />
         </header>
 
+        <KYBProgressBanner />
         <main className="portal-content">
           <Outlet />
         </main>
