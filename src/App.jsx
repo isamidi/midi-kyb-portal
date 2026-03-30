@@ -3,7 +3,6 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { supabase } from './lib/supabaseClient'
 import Register from './pages/Register'
 import Login from './pages/Login'
-import VerifyEmail from './pages/VerifyEmail'
 import KYBUpload from './pages/KYBUpload'
 import KYBForm from './pages/KYBForm'
 import KYBReview from './pages/KYBReview'
@@ -17,13 +16,6 @@ import AddPersonas from './pages/portal/AddPersonas'
 import Payments from './pages/portal/Payments'
 import RegistrationLink from './pages/portal/RegistrationLink'
 import PortalSettings from './pages/portal/PortalSettings'
-
-// Admin Dashboard
-import AdminLayout from './components/admin/AdminLayout'
-import PipelineKYB from './pages/admin/PipelineKYB'
-import EmpresasActivas from './pages/admin/EmpresasActivas'
-import Metricas from './pages/admin/Metricas'
-import Configuracion from './pages/admin/Configuracion'
 
 // Auth context
 export const AuthContext = createContext(null)
@@ -56,7 +48,7 @@ function ProtectedRoute({ children }) {
   return children
 }
 
-// Portal route - redirects to KYB if not approved
+// Portal route - allows access once KYB documents are submitted
 function PortalRoute({ children }) {
   const { user, loading, applicationStatus } = useAuth()
 
@@ -72,7 +64,9 @@ function PortalRoute({ children }) {
     return <Navigate to="/login" replace />
   }
 
-  if (applicationStatus !== 'contract_signed' && applicationStatus !== 'approved') {
+  // Allow portal access for submitted, approved, and contract_signed statuses
+  const allowedStatuses = ['submitted', 'in_review', 'approved', 'contract_signed']
+  if (!allowedStatuses.includes(applicationStatus)) {
     return <Navigate to="/kyb/upload" replace />
   }
 
@@ -92,84 +86,51 @@ export default function App() {
     companyId: null,
   })
 
-  // Extracted function to load company data for a given userId
-  const loadCompanyData = async (userId) => {
-    try {
-      const { data: companyUsers, error: cuError } = await supabase
-        .from('company_users')
-        .select('companies(*), role')
-        .eq('user_id', userId)
-        .eq('status', 'active')
-        .limit(1)
-
-      const companyUser = companyUsers?.[0]
-
-      if (cuError) {
-        console.error('Error fetching company user:', cuError)
-      }
-
-      if (companyUser?.companies) {
-        setCompany({
-          id: companyUser.companies.id,
-          name: companyUser.companies.name,
-          role: companyUser.role,
-        })
-        setKybData(prev => ({
-          ...prev,
-          companyId: companyUser.companies.id,
-        }))
-
-        const { data: apps, error: appError } = await supabase
-          .from('kyb_applications')
-          .select('status')
-          .eq('company_id', companyUser.companies.id)
-          .limit(1)
-
-        if (appError) {
-          console.error('Error fetching application:', appError)
-        }
-
-        const app = apps?.[0]
-        if (app) {
-          setApplicationStatus(app.status)
-        }
-      }
-    } catch (err) {
-      console.error('loadCompanyData error:', err)
-    }
-  }
-
   useEffect(() => {
+    // Check active session and load company info
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null)
+
       if (session?.user) {
-        await loadCompanyData(session.user.id)
+        // Load company info from company_users junction table
+        const { data: companyUser } = await supabase
+          .from('company_users')
+          .select('companies(*), role')
+          .eq('user_id', session.user.id)
+          .eq('status', 'active')
+          .single()
+
+        if (companyUser?.companies) {
+          setCompany({
+            id: companyUser.companies.id,
+            name: companyUser.companies.name,
+            role: companyUser.role,
+          })
+          setKybData(prev => ({
+            ...prev,
+            companyId: companyUser.companies.id,
+          }))
+
+          // Load application status
+          const { data: app } = await supabase
+            .from('kyb_applications')
+            .select('status')
+            .eq('company_id', companyUser.companies.id)
+            .single()
+
+          if (app) {
+            setApplicationStatus(app.status)
+          }
+        }
       }
       setLoading(false)
     })
 
-    // IMPORTANT: This callback must be SYNCHRONOUS.
-    // Making it async blocks verifyOtp() from resolving (Supabase internal deadlock).
-    // Use fire-and-forget for loadCompanyData instead.
+    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      const newUser = session?.user ?? null
-      setUser(newUser)
-      if (newUser) {
-        // Fire-and-forget: don't await, don't block the callback
-        loadCompanyData(newUser.id).catch(console.error)
-      } else {
-        setCompany(null)
-        setApplicationStatus(null)
-        setKybData({
-          documents: [],
-          formFields: {},
-          applicationId: null,
-          status: null,
-          companyId: null,
-        })
-      }
+      setUser(session?.user ?? null)
     })
 
     return () => subscription.unsubscribe()
@@ -189,23 +150,22 @@ export default function App() {
     })
   }
 
+  // Determine where authenticated users should go
   const getDefaultRoute = () => {
-    if (applicationStatus === 'contract_signed' || applicationStatus === 'approved') {
+    const portalStatuses = ['submitted', 'in_review', 'approved', 'contract_signed']
+    if (portalStatuses.includes(applicationStatus)) {
       return '/portal'
     }
     return '/kyb/upload'
   }
 
   return (
-    <AuthContext.Provider
-      value={{ user, loading, signOut, company, applicationStatus, setApplicationStatus }}
-    >
+    <AuthContext.Provider value={{ user, loading, signOut, company, applicationStatus, setApplicationStatus }}>
       <KYBContext.Provider value={{ kybData, setKybData, companyId: company?.id }}>
         <Routes>
           <Route path="/" element={<Register />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
 
           {/* KYB Flow */}
           <Route
@@ -244,24 +204,12 @@ export default function App() {
             <Route path="ajustes" element={<PortalSettings />} />
           </Route>
 
-          {/* Admin Dashboard */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<PipelineKYB />} />
-            <Route path="pipeline" element={<PipelineKYB />} />
-            <Route path="empresas" element={<EmpresasActivas />} />
-            <Route path="metricas" element={<Metricas />} />
-            <Route path="config" element={<Configuracion />} />
-          </Route>
-
           {/* Catch-all */}
-          <Route
-            path="*"
-            element={
-              <ProtectedRoute>
-                <Navigate to={getDefaultRoute()} replace />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="*" element={
+            <ProtectedRoute>
+              <Navigate to={getDefaultRoute()} replace />
+            </ProtectedRoute>
+          } />
         </Routes>
       </KYBContext.Provider>
     </AuthContext.Provider>
